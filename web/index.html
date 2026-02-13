@@ -263,11 +263,14 @@
     <script>
         let allLogs = [];
         let currentFilter = 'all';
+        let displayedCount = 0; // Number of logs currently displayed
+        const LOGS_PER_PAGE = 20; // Load 20 logs at a time
 
         async function fetchLogs() {
             try {
                 const response = await fetch('/api/logs');
                 allLogs = await response.json();
+                displayedCount = 0; // Reset displayed count when new logs are fetched
                 renderLogs();
             } catch (error) {
                 console.error("Failed to fetch logs:", error);
@@ -281,10 +284,11 @@
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById('btn-' + filter).classList.add('active');
 
+            displayedCount = 0; // Reset when filter changes
             renderLogs();
         }
 
-        function renderLogs() {
+        function renderLogs(append = false) {
             const container = document.getElementById('logs-container');
 
             // Sort by timestamp desc (newest first)
@@ -292,8 +296,8 @@
 
             const filteredLogs = sortedLogs.filter(log => {
                 if (currentFilter === 'all') return true;
-                if (currentFilter === 'fail') return log.result === 'FAIL' || log.result === 'ERROR';
-                if (currentFilter === 'pass') return log.result === 'PASS' || log.result === 'SKIPPED';
+                if (currentFilter === 'fail') return log.result === 'NG' || log.result === 'FAIL' || log.result === 'ERROR';
+                if (currentFilter === 'pass') return log.result === 'OK' || log.result === 'PASS' || log.result === 'SKIPPED';
                 return true;
             });
 
@@ -302,8 +306,13 @@
                 return;
             }
 
+            // Calculate how many logs to display
+            const logsToShow = append ? displayedCount + LOGS_PER_PAGE : LOGS_PER_PAGE;
+            displayedCount = Math.min(logsToShow, filteredLogs.length);
+
             let html = '';
-            filteredLogs.forEach(log => {
+            for (let i = 0; i < displayedCount; i++) {
+                const log = filteredLogs[i];
                 const encodedPath = encodeURIComponent(log.file_path);
                 const thumbUrl = `/api/image?path=${encodedPath}`;
                 const resultClass = log.result.toUpperCase(); // Ensure uppercase for CSS class
@@ -325,7 +334,13 @@
                     </div>
                 </div>
                 `;
-            });
+            }
+
+            // Show "Load More" message if there are more logs
+            if (displayedCount < filteredLogs.length) {
+                html += `<div class="empty-state" style="grid-column: 1 / -1; padding: 20px;">Scroll down to load more... (${displayedCount}/${filteredLogs.length})</div>`;
+            }
+
             container.innerHTML = html;
         }
 
@@ -346,6 +361,33 @@
             if (!str) return '';
             return (str.length > n) ? str.substr(0, n - 1) + '...' : str;
         }
+
+        // Infinite scroll implementation
+        let isLoading = false;
+        window.addEventListener('scroll', () => {
+            if (isLoading) return;
+
+            const scrollPosition = window.innerHeight + window.scrollY;
+            const threshold = document.documentElement.scrollHeight - 800; // Trigger 800px before bottom
+
+            if (scrollPosition >= threshold) {
+                const sortedLogs = [...allLogs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                const filteredLogs = sortedLogs.filter(log => {
+                    if (currentFilter === 'all') return true;
+                    if (currentFilter === 'fail') return log.result === 'NG' || log.result === 'FAIL' || log.result === 'ERROR';
+                    if (currentFilter === 'pass') return log.result === 'OK' || log.result === 'PASS' || log.result === 'SKIPPED';
+                    return true;
+                });
+
+                if (displayedCount < filteredLogs.length) {
+                    isLoading = true;
+                    setTimeout(() => {
+                        renderLogs(true); // append mode
+                        isLoading = false;
+                    }, 200); // Small delay for better UX
+                }
+            }
+        });
 
         // Fetch logs initially and poll
         fetchLogs();

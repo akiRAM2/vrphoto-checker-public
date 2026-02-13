@@ -1,37 +1,86 @@
-# 監査基準 (Audit Rules)
+# Audit Rules
 
-以下の基準に基づき、厳格に判定を行ってください。
+Evaluate content based on the following criteria with STRICT enforcement.
 
-1. 性的表現 (Sexually Explicit Content) 【判定: FAIL】
-露出: 生殖器、臀部、または乳首（女性型アバターの場合）の露出。
+## [OK / PASS] Allowed Content
 
-性行為: 性行為、またはそれを強く示唆するポーズやアニメーション。
+Only the following are clearly acceptable:
 
-過度の暗示: 性的満足を目的とした衣装（過度に露出度の高い下着、ボンデージ等）やオブジェクト。
+### Clearly Safe Content
+- **Fully clothed avatars**: Standard clothing with no questionable exposure
+- **Landscape/architecture**: World scenery without people
+- **Casual group photos**: People in normal attire at public events
 
-2. ヘイトスピーチ・差別 (Hate Speech) 【判定: FAIL】
-差別的シンボル: 特定の民族、宗教、性的指向、障害、または保護されたグループを攻撃・誹謗中傷するシンボル（ナチス関連、差別団体のロゴ等）。
+### Judgment Principle
+**"When in doubt, mark as NG."**
+If the content is questionable or unclear, it should be flagged for review.
 
-テキスト表現: 差別用語（スラー）や、特定のグループへの暴力を煽る文言の表示。
+---
 
-3. 暴力・グロテスク (Violence & Gore) 【判定: FAIL / FLAG】
-過度な残虐性: 過度な出血、内臓露出、切断、または写実的な死体表現。
+## [NG] Prohibited Content - Flag Immediately
 
-自傷行為: 自傷行為を助長、または美化する表現。
+### 1. Sexually Explicit Content [Judgment: NG]
+**Exposure (Critical)**: 
+  - [NG] Any visible genitals
+  - [NG] Any visible nipples (female avatars)
+  - [NG] Exposed buttocks
+  - [NG] Revealing clothing where coverage is unclear or minimal
 
-武器の文脈: 実在の人物やグループを威嚇・攻撃することを目的とした武器の配置。
+**Provocative/Suggestive Clothing**:
+  - [NG] Sexually provocative outfits, even if body parts are covered
+  - [NG] Extremely tight clothing that emphasizes body shape in a sexual manner
+  - [NG] Lingerie-style clothing worn in explicitly sexual contexts
+  - [NG] Outfits designed primarily for sexual appeal or provocation
 
-4. プライバシー・嫌がらせ (Privacy & Harassment) 【判定: FAIL】
-個人情報 (Doxing): 実在する個人の氏名、住所、電話番号、SNSアカウント、位置情報などの映り込み。
+**Sexual Acts**: 
+  - [NG] Sexual acts or poses/animations suggesting them
+  - [NG] Suggestive or provocative positions
 
-嫌がらせ: 特定のユーザーを標的にした誹謗中傷、またはストーキングを助長する表現。
+**Excessive Suggestiveness**: 
+  - [NG] Clothing or poses designed for sexual gratification
 
-5. なりすまし・権利侵害 (Impersonation & IP) 【判定: FLAG】
-公式の詐称: VRChat運営（モデレーター、スタッフ）であると誤認させるバッジ、ロゴ、またはテキスト。
+### 2. Hate Speech, Discrimination & Religious Symbols [Judgment: NG]
+**Discriminatory & Extremist Symbols**: 
+  - [NG] Swastikas and Nazi-related imagery
+  - [NG] KKK symbols and white supremacist logos
+  - [NG] ISIS, terrorist organization symbols
+  - [NG] Any symbols associated with hate groups
+  - [NG] Religious symbols used in mocking, hateful, or extremist context
 
-他者の権利: 明らかに他者が権利を持つキャラクターやロゴの無断利用、およびそれらを自作と偽る表現。
+**Textual Expressions**: 
+  - [NG] Discriminatory slurs targeting race, religion, sexual orientation, disability
+  - [NG] Statements inciting violence against specific groups
 
-6. 違法物品・危険行為 (Illegal Acts) 【判定: FAIL】
-違法薬物: 違法薬物の使用を推奨・助長する視覚表現。
+### 3. Violence & Gore [Judgment: NG]
+**Excessive Brutality**: 
+  - [NG] Excessive bleeding or graphic blood
+  - [NG] Exposed organs or realistic gore
+  - [NG] Dismemberment or realistic corpses
 
-テロ・犯罪: 犯罪行為やテロ活動を象徴、または称賛する表現。
+**Self-Harm**: 
+  - [NG] Content promoting or glorifying self-harm
+
+**Threatening Weapons**: 
+  - [NG] Weapons positioned to threaten real people
+
+### 4. Privacy & Harassment [Judgment: NG]
+**Personal Information (Doxing)**: 
+  - [NG] Real personal names, addresses, phone numbers
+  - [NG] Identifiable real-world locations with malicious intent
+
+**Harassment**: 
+  - [NG] Content targeting specific users for harassment
+
+### 5. Impersonation & IP Infringement [Judgment: FLAG]
+**Official Impersonation**: 
+  - [NG] False representation as VRChat staff or moderators
+
+**Rights Violations**: 
+  - [FLAG] Obvious unauthorized use of copyrighted characters
+
+### 6. Illegal Items & Dangerous Acts [Judgment: NG]
+**Illegal Drugs**: 
+  - [NG] Visual promotion of illegal drug use
+
+**Terrorism & Crime**: 
+  - [NG] Symbols or content praising terrorism or criminal acts

@@ -11,6 +11,7 @@ class Auditor:
         self.api_url = config.get("ai_api_url", "http://localhost:11434/api/generate")
         self.base_url = self.api_url.replace("/api/generate", "") # Extract base URL for other endpoints
         self.model = config.get("ai_model", "gemma3:4b")
+        self.timeout = config.get("ai_timeout", 60)  # Default 60 seconds for vision inference
         self.rules_path = "rules.md"
     
     def check_health(self):
@@ -104,31 +105,55 @@ class Auditor:
         
         rules_text = self._read_rules()
         
-        # Optimized prompt for Gemma
-        prompt = f"""
-        ACT AS A CONTENT MODERATION AI.
-        CONTEXT: VRChat screenshots (Anime/Cartoon style).
-        TASK: Analyze the image visual content and check for rule violations.
-        LANGUAGE: JAPANESE (The 'reason' field MUST be in Japanese).
-        
-        INSTRUCTIONS:
-        1. First, visually analyze the image components (characters, clothing, text, background).
-        2. Strictly evaluate against the rules below.
-        3. "Anime/Cartoon style" logic:
-           - Standard swimwear/cosplay -> OK
-           - Exposed genitalia/nipples -> NG
-           - Sexual acts -> NG
-        
-        RULES:
-        {rules_text}
-        
-        OUTPUT FORMAT:
-        Return ONLY a JSON object.
-        {{
-            "result": "OK" or "NG",
-            "reason": "視覚的特徴: [画像に何が映っているか具体的に描写]. 判定理由: [ルールに基づく判定の根拠]."
-        }}
-        """
+        # Strict moderation prompt with "when in doubt, mark as NG" policy
+        prompt = f"""You are a strict content moderation AI for VRChat screenshots.
+
+CONTEXT: VRChat is a 3D virtual reality game.
+- Images contain 3D game characters (avatars) and 3D virtual backgrounds
+- Avatars have diverse skin colors: human tones (light to dark) AND fantasy colors (blue, green, purple, pink, etc.)
+- This skin color diversity is NORMAL for this game - do not flag based on skin color alone
+
+PRINCIPLE: "When in doubt, mark as NG" - Be cautious and flag potentially problematic content.
+
+STEP 1 - Observe the image carefully:
+Examine: avatars, clothing coverage, visible body parts, text, symbols, background elements.
+Remember: This is a 3D game. Diverse skin colors (including fantasy colors) are normal.
+
+STEP 2 - Check against rules:
+{rules_text}
+
+STEP 3 - Examples for guidance:
+
+[OK examples] - Only these are clearly acceptable:
+- Fully clothed avatars (standard clothing visible) - any skin color
+- Casual photos in public VRChat worlds
+- Landscape/architecture screenshots without people
+
+[NG examples] - Flag any of these:
+- Exposed or partially visible genitals, nipples, buttocks
+- Revealing clothing where coverage is unclear
+- Provocative/sexually suggestive clothing (even if body parts are covered)
+  * Extremely tight clothing emphasizing body shape
+  * Lingerie-style outfits in sexual contexts
+  * Clothing designed to be sexually provocative
+- Sexual poses or suggestive animations
+- Hate symbols: Swastikas, Nazi imagery, KKK symbols, extremist logos
+- Religious symbols used in mocking or hateful context
+- Discriminatory text or slurs
+- Real personal information (names, addresses)
+- Graphic violence or gore
+- Drug-related imagery
+
+IMPORTANT: If you are uncertain whether something violates the rules, mark it as NG.
+
+OUTPUT (strict JSON format):
+{{
+    "result": "OK" or "NG",
+    "reason": "視覚的特徴: [具体的な観察内容]. 判定理由: [NGまたはOKの根拠]."
+}}
+
+Output ONLY the JSON object. The "reason" must be in Japanese.
+"""
         
         payload = {
             "model": self.model,
@@ -142,11 +167,20 @@ class Auditor:
             data = json.dumps(payload).encode('utf-8')
             req = urllib.request.Request(self.api_url, data=data, headers={'Content-Type': 'application/json'})
             
-            with urllib.request.urlopen(req, timeout=30) as response: # 30s timeout for inference
+            logging.info(f"Sending image to AI (timeout: {self.timeout}s)...")
+            with urllib.request.urlopen(req, timeout=self.timeout) as response: # 30s timeout for inference
                 response_body = response.read().decode('utf-8')
                 result_json = json.loads(response_body)
                 
                 ai_response_text = result_json.get("response", "{}")
+                
+                # Debug: Log the raw AI response
+                logging.info(f"Raw AI response (first 500 chars): {ai_response_text[:500]}")
+                
+                # Check if response is empty or just whitespace
+                if not ai_response_text or ai_response_text.strip() == "":
+                    logging.error("AI returned empty response")
+                    return "ERROR", "AI returned empty response"
                 
                 try:
                     # Clean up if AI adds markdown code blocks
@@ -157,10 +191,19 @@ class Auditor:
 
                     audit_data = json.loads(ai_response_text)
                     
+                    # Debug: Log parsed JSON
+                    logging.info(f"Parsed JSON keys: {list(audit_data.keys())}")
+                    
+                    # Check if JSON is empty
+                    if not audit_data:
+                        logging.error(f"AI returned empty JSON object. Raw response was: {ai_response_text[:200]}")
+                        return "ERROR", "AI returned empty JSON object"
+                    
                     # Validate keys
                     if "result" not in audit_data or "reason" not in audit_data:
-                        logging.warning(f"AI returned incomplete JSON: {audit_data}")
-                        return "ERROR", "AI response missing 'result' or 'reason' keys."
+                        logging.warning(f"AI returned incomplete JSON. Keys found: {list(audit_data.keys())}")
+                        logging.warning(f"Full JSON: {audit_data}")
+                        return "ERROR", f"AI response missing required keys. Got: {list(audit_data.keys())}"
 
                     return audit_data.get("result", "UNKNOWN"), audit_data.get("reason", "No reason provided")
                     
@@ -175,8 +218,8 @@ class Auditor:
             logging.error(f"Connection Error to AI API: {e.reason}")
             return "ERROR", "Failed to connect to AI server during audit."
         except socket.timeout:
-            logging.error("AI Inference timed out.")
-            return "ERROR", "AI Inference timed out (too slow)."
+            logging.error(f"AI Inference timed out after {self.timeout} seconds.")
+            return "ERROR", f"AI Inference timed out (>{self.timeout}s). Try increasing 'ai_timeout' in config.json"
         except Exception as e:
             logging.error(f"Unexpected error during audit: {e}")
             return "ERROR", f"Unexpected error: {str(e)}"
