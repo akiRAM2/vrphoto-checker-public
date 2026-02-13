@@ -1,5 +1,5 @@
 {
-    "watch_path": "./watch_folder_example",
+    "watch_path": "C:\\Users\\USER\\Pictures\\VRChat",
     "ai_api_url": "http://localhost:11434/api/generate",
     "ai_model": "gemma3:4b",
     "poll_interval": 5,
