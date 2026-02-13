@@ -16,21 +16,44 @@ logging.basicConfig(
 
 def load_config():
     config_path = "config.json"
+    default_config = {
+        "watch_path": os.path.join(os.path.expanduser("~"), "Pictures", "VRChat"),
+        "ai_api_url": "http://localhost:11434/api/generate",
+        "ai_model": "gemma2",
+        "poll_interval": 5,
+        "port": 8080
+    }
+
     if not os.path.exists(config_path):
-        # Default configuration
-        default_config = {
-            "watch_path": os.path.join(os.path.expanduser("~"), "Pictures", "VRChat"),
-            "ai_api_url": "http://localhost:11434/api/generate",
-            "ai_model": "gemma:2b",
-            "poll_interval": 5,
-            "port": 8080
-        }
-        with open(config_path, "w", encoding="utf-8") as f:
-            json.dump(default_config, f, indent=4)
+        logging.info("Configuration file not found. Creating default config.json.")
+        try:
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump(default_config, f, indent=4)
+        except IOError as e:
+            logging.error(f"Failed to create config file: {e}")
         return default_config
     
-    with open(config_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        logging.error(f"CRITICAL: Default config file '{config_path}' is corrupted.")
+        logging.error(f"JSON Error: {e}")
+        print("\n" + "="*50)
+        print("❌  Configuration Error")
+        print(f"The 'config.json' file is invalid. Line {e.lineno}, Column {e.colno}.")
+        print("Action: Please fix the syntax error or delete the file to regenerate defaults.")
+        print("="*50 + "\n")
+        # Returning default config to allow execution to proceed or letting it crash depends on strategy.
+        # But per user request for "easy debugging", returning defaults might mask the issue?
+        # Let's return defaults but strictly warn, or maybe just exit.
+        # Given the user wants detailed debug info, let's re-raise or return None and let main handle it?
+        # Simpler: Return default but rename broken file.
+        # Actually, let's just return defaults but WARN heavily.
+        return default_config
+    except Exception as e:
+        logging.error(f"Unexpected error reading config: {e}")
+        return default_config
 
 def main():
     print("""
