@@ -115,9 +115,9 @@ class Auditor:
         1. First, visually analyze the image components (characters, clothing, text, background).
         2. Strictly evaluate against the rules below.
         3. "Anime/Cartoon style" logic:
-           - Standard swimwear/cosplay -> PASS
-           - Exposed genitalia/nipples -> FAIL
-           - Sexual acts -> FAIL
+           - Standard swimwear/cosplay -> OK
+           - Exposed genitalia/nipples -> NG
+           - Sexual acts -> NG
         
         RULES:
         {rules_text}
@@ -125,7 +125,7 @@ class Auditor:
         OUTPUT FORMAT:
         Return ONLY a JSON object.
         {{
-            "result": "PASS" or "FAIL",
+            "result": "OK" or "NG",
             "reason": "視覚的特徴: [画像に何が映っているか具体的に描写]. 判定理由: [ルールに基づく判定の根拠]."
         }}
         """
