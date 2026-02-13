@@ -33,11 +33,25 @@ def load_config():
         return json.load(f)
 
 def main():
-    logging.info("Starting vrphoto-checker...")
+    print("""
+    ##########################################
+    #   VRPhoto Checker (Standalone Edition) #
+    ##########################################
+    """)
+    logging.info("Initializing system...")
     
     # Load configuration
     config = load_config()
     
+    # Check Environment (Ollama & Model)
+    # We create a temporary auditor instance just for the health check
+    from core.auditor import Auditor
+    temp_auditor = Auditor(config)
+    if not temp_auditor.check_health():
+        logging.error("System health check failed. Please fix the issues above and restart.")
+        input("Press Enter to exit...")
+        return
+
     # Initialize database
     db = Database("logs/history.db")
     db.init_db()
@@ -50,6 +64,8 @@ def main():
     
     # Start Directory Watcher
     watcher = Watcher(config, db)
+    
+    logging.info("Startup complete. Waiting for new photos...")
     try:
         watcher.start()
     except KeyboardInterrupt:
