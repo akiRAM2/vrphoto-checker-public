@@ -10,7 +10,7 @@ class Auditor:
     def __init__(self, config):
         self.api_url = config.get("ai_api_url", "http://localhost:11434/api/generate")
         self.base_url = self.api_url.replace("/api/generate", "") # Extract base URL for other endpoints
-        self.model = config.get("ai_model", "gemma2")
+        self.model = config.get("ai_model", "gemma3:4b")
         self.rules_path = "rules.md"
     
     def check_health(self):
@@ -29,7 +29,7 @@ class Auditor:
                     return False
 
         except urllib.error.URLError as e:
-            if isinstance(e.reason, ConnectionRefusedError) or isinstance(e.reason, FileNotFoundError): # FileNotFoundError can happen on some unix sockets logic too but mostly WinError 10061
+            if isinstance(e.reason, ConnectionRefusedError) or isinstance(e.reason, FileNotFoundError): 
                 logging.error(f"Connection refused: {e.reason}")
                 print("\n" + "="*50)
                 print("❌  Ollama Not Running")
@@ -61,8 +61,15 @@ class Auditor:
                 print("\n" + "="*50)
                 print(f"⚠️  Model '{self.model}' Missing")
                 print(f"Found models: {', '.join(available_models) if available_models else 'None'}")
-                print(f"Action: Run the following command in your terminal:")
-                print(f"    ollama pull {self.model}")
+                
+                # Smart suggestion logic
+                similar_models = [m for m in available_models if 'gemma' in m.lower()]
+                if similar_models:
+                    print(f"💡 Suggestion: You have '{similar_models[0]}'.")
+                    print(f"Action: Update 'config.json' to use '{similar_models[0]}' instead of '{self.model}'.")
+                else:
+                    print(f"Action: Run the following command in your terminal:")
+                    print(f"    ollama pull {self.model}")
                 print("="*50 + "\n")
                 return False 
                 
