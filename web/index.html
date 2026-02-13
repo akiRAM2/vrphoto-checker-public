@@ -1,98 +1,349 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VRPhoto Checker Dashboard</title>
+    <title>VRPhoto Checker Audit Log</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-body: #0f1115;
+            --bg-card: #161b22;
+            --border-color: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --color-fail: #da3633;
+            --color-fail-bg: rgba(218, 54, 51, 0.15);
+            --color-pass: #238636;
+            --color-pass-bg: rgba(35, 134, 54, 0.15);
+            --color-skip: #6e7681;
+            --color-accent: #58a6ff;
+        }
+
         body {
-            font-family: sans-serif;
-            margin: 20px;
-            background-color: #f0f0f0;
-            color: #333;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
         }
 
         h1 {
-            color: #555;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        table {
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--color-pass);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--color-pass);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+        }
+
+        .filter-btn.active {
+            background-color: var(--color-accent);
+            border-color: var(--color-accent);
+            color: #ffffff;
+        }
+
+        /* Log Grid */
+        #logs-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .log-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .log-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            border-color: var(--text-secondary);
+        }
+
+        .thumb-wrapper {
+            height: 180px;
+            overflow: hidden;
+            position: relative;
+            background-color: #000;
+        }
+
+        .thumb-wrapper img.thumb-img {
             width: 100%;
-            border-collapse: collapse;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            height: 100%;
+            object-fit: contain;
+            /* Show full image */
+            position: relative;
+            z-index: 1;
         }
 
-        th,
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
+        /* Blur background effect for thumb */
+        .thumb-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-size: cover;
+            background-position: center;
+            filter: blur(20px) brightness(0.5);
+            z-index: 0;
         }
 
-        th {
-            background-color: #f7f7f7;
+        .card-body {
+            padding: 16px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .pass {
-            color: green;
-            font-weight: bold;
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
         }
 
-        .fail {
-            color: red;
-            font-weight: bold;
+        .badge {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .error {
+        .badge.PASS {
+            background-color: var(--color-pass-bg);
+            color: var(--color-pass);
+            border: 1px solid var(--color-pass);
+        }
+
+        .badge.FAIL {
+            background-color: var(--color-fail-bg);
+            color: var(--color-fail);
+            border: 1px solid var(--color-fail);
+        }
+
+        .badge.SKIPPED {
+            background-color: var(--bg-body);
+            color: var(--color-skip);
+            border: 1px solid var(--border-color);
+        }
+
+        .badge.ERROR {
+            background-color: rgba(255, 165, 0, 0.15);
             color: orange;
-            font-weight: bold;
+            border: 1px solid orange;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .reason {
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-primary);
+            flex-grow: 1;
+        }
+
+        .filename {
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+            font-family: monospace;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px dashed var(--border-color);
         }
     </style>
 </head>
 
 <body>
-    <h1>VRPhoto Checker Dashboard</h1>
-    <div id="logs">
-        Loading...
+    <div class="container">
+        <header>
+            <h1>
+                <div class="status-dot"></div> VRPhoto Checker
+            </h1>
+            <div class="filters">
+                <button id="btn-all" class="filter-btn active" onclick="setFilter('all')">All Logs</button>
+                <button id="btn-fail" class="filter-btn" onclick="setFilter('fail')"
+                    style="color: var(--color-fail); border-color: var(--color-fail-bg);">⚠️ Failures Only</button>
+                <button id="btn-pass" class="filter-btn" onclick="setFilter('pass')">Passed</button>
+            </div>
+        </header>
+
+        <div id="logs-container">
+            <!-- Logs will be injected here -->
+            <div class="empty-state">Waiting for logs...</div>
+        </div>
     </div>
 
     <script>
+        let allLogs = [];
+        let currentFilter = 'all';
+
         async function fetchLogs() {
             try {
                 const response = await fetch('/api/logs');
-                const logs = await response.json();
-                renderLogs(logs);
+                allLogs = await response.json();
+                renderLogs();
             } catch (error) {
-                document.getElementById('logs').innerText = 'Failed to load logs.';
-                console.error(error);
+                console.error("Failed to fetch logs:", error);
             }
         }
 
-        function renderLogs(logs) {
-            if (logs.length === 0) {
-                document.getElementById('logs').innerText = 'No logs available.';
+        function setFilter(filter) {
+            currentFilter = filter;
+
+            // Update buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + filter).classList.add('active');
+
+            renderLogs();
+        }
+
+        function renderLogs() {
+            const container = document.getElementById('logs-container');
+
+            // Sort by timestamp desc (newest first)
+            const sortedLogs = [...allLogs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            const filteredLogs = sortedLogs.filter(log => {
+                if (currentFilter === 'all') return true;
+                if (currentFilter === 'fail') return log.result === 'FAIL' || log.result === 'ERROR';
+                if (currentFilter === 'pass') return log.result === 'PASS' || log.result === 'SKIPPED';
+                return true;
+            });
+
+            if (filteredLogs.length === 0) {
+                container.innerHTML = `<div class="empty-state">No logs found for filter: ${currentFilter.toUpperCase()}</div>`;
                 return;
             }
 
-            let html = '<table><thead><tr><th>Thumb</th><th>Result</th><th>Reason</th><th>File Path</th><th>Timestamp</th></tr></thead><tbody>';
-            logs.forEach(log => {
-                const resultClass = log.result.toLowerCase();
+            let html = '';
+            filteredLogs.forEach(log => {
                 const encodedPath = encodeURIComponent(log.file_path);
-                html += `<tr>
-                    <td><img src="/api/image?path=${encodedPath}" height="60" style="border-radius:4px; max-width: 100px; object-fit: cover;"></td>
-                    <td class="${resultClass}">${log.result}</td>
-                    <td>${log.reason}</td>
-                    <td style="font-size: 10px; color: #888;">${log.file_path}</td>
-                    <td style="font-size: 12px;">${log.timestamp}</td>
-                </tr>`;
+                const thumbUrl = `/api/image?path=${encodedPath}`;
+                const resultClass = log.result.toUpperCase(); // Ensure uppercase for CSS class
+                const fileName = log.file_path.split(/[\\/]/).pop(); // Extract filename
+
+                html += `
+                <div class="log-card">
+                    <div class="thumb-wrapper">
+                        <div class="thumb-bg" style="background-image: url('${thumbUrl}')"></div>
+                        <img src="${thumbUrl}" class="thumb-img" alt="${fileName}" loading="lazy">
+                    </div>
+                    <div class="card-body">
+                        <div class="card-header">
+                            <span class="badge ${resultClass}">${log.result}</span>
+                            <span class="timestamp">${formatTime(log.timestamp)}</span>
+                        </div>
+                        <div class="reason" title="${log.reason}">${truncate(log.reason, 80)}</div>
+                        <div class="filename" title="${log.file_path}">${fileName}</div>
+                    </div>
+                </div>
+                `;
             });
-            html += '</tbody></table>';
-            document.getElementById('logs').innerHTML = html;
+            container.innerHTML = html;
         }
 
-        // Fetch logs on load and every 5 seconds
+        function formatTime(isoString) {
+            if (!isoString) return '';
+            const date = new Date(isoString + "Z"); // SQLite defaults might lack timezone, assume Z or UTC if needed, but usually browser handles ISO
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function truncate(str, n) {
+            if (!str) return '';
+            return (str.length > n) ? str.substr(0, n - 1) + '...' : str;
+        }
+
+        // Fetch logs initially and poll
         fetchLogs();
         setInterval(fetchLogs, 5000);
     </script>
