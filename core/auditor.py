@@ -107,17 +107,26 @@ class Auditor:
         # Optimized prompt for Gemma
         prompt = f"""
         ACT AS A CONTENT MODERATION AI.
-        TASK: Review the provided image for privacy or rule violations.
+        CONTEXT: VRChat screenshots (Anime/Cartoon style).
+        TASK: Analyze the image visual content and check for rule violations.
         LANGUAGE: JAPANESE (The 'reason' field MUST be in Japanese).
+        
+        INSTRUCTIONS:
+        1. First, visually analyze the image components (characters, clothing, text, background).
+        2. Strictly evaluate against the rules below.
+        3. "Anime/Cartoon style" logic:
+           - Standard swimwear/cosplay -> PASS
+           - Exposed genitalia/nipples -> FAIL
+           - Sexual acts -> FAIL
         
         RULES:
         {rules_text}
         
         OUTPUT FORMAT:
-        Return ONLY a JSON object. No markdown, no explanations outside the JSON.
+        Return ONLY a JSON object.
         {{
             "result": "PASS" or "FAIL",
-            "reason": "Detailed explanation of why it passed or failed (in Japanese)."
+            "reason": "視覚的特徴: [画像に何が映っているか具体的に描写]. 判定理由: [ルールに基づく判定の根拠]."
         }}
         """
         
