@@ -108,6 +108,7 @@ class Auditor:
         prompt = f"""
         ACT AS A CONTENT MODERATION AI.
         TASK: Review the provided image for privacy or rule violations.
+        LANGUAGE: JAPANESE (The 'reason' field MUST be in Japanese).
         
         RULES:
         {rules_text}
@@ -116,7 +117,7 @@ class Auditor:
         Return ONLY a JSON object. No markdown, no explanations outside the JSON.
         {{
             "result": "PASS" or "FAIL",
-            "reason": "Detailed explanation of why it passed or failed."
+            "reason": "Detailed explanation of why it passed or failed (in Japanese)."
         }}
         """
         
