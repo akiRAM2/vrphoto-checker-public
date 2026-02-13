@@ -15,18 +15,38 @@ class Watcher:
     def start(self):
         logging.info(f"Monitoring folder: {self.watch_path}")
         
-        # Initial scan to populate processed_files (optional: or process existing files)
-        # For now, we might just want to process new files appearing after start.
-        # But to be safe, let's just loop.
-        
         if not os.path.exists(self.watch_path):
             logging.warning(f"Watch path does not exist: {self.watch_path}")
             # Try to create it for testing purposes
             os.makedirs(self.watch_path, exist_ok=True)
 
+        # 1. Initial Scan: Skip existing files that haven't been processed
+        self._initial_skip_scan()
+
+        # 2. Main Loop: Monitor for new files
         while True:
             self._scan()
             time.sleep(self.poll_interval)
+
+    def _initial_skip_scan(self):
+        """Marks all currently existing files as SKIPPED in the DB if not already present."""
+        logging.info("Performing initial scan to skip existing files...")
+        count = 0
+        try:
+            for root, dirs, files in os.walk(self.watch_path):
+                for file in files:
+                    if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+                        full_path = os.path.join(root, file)
+                        if not self.db.is_processed(full_path):
+                            self.db.add_record(full_path, "SKIPPED", "Pre-existing file skipped on startup")
+                            count += 1
+        except Exception as e:
+            logging.error(f"Error during initial scan: {e}")
+        
+        if count > 0:
+            logging.info(f"Skipped {count} pre-existing files.")
+        else:
+            logging.info("No new pre-existing files found to skip.")
 
     def _scan(self):
         try:
