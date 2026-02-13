@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VRPhoto Checker Dashboard</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f0f0f0; color: #333; }
+        h1 { color: #555; }
+        table { width: 100%; border-collapse: collapse; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background-color: #f7f7f7; }
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .error { color: orange; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>VRPhoto Checker Dashboard</h1>
+    <div id="logs">
+        Loading...
+    </div>
+
+    <script>
+        async function fetchLogs() {
+            try {
+                const response = await fetch('/api/logs');
+                const logs = await response.json();
+                renderLogs(logs);
+            } catch (error) {
+                document.getElementById('logs').innerText = 'Failed to load logs.';
+                console.error(error);
+            }
+        }
+
+        function renderLogs(logs) {
+            if (logs.length === 0) {
+                document.getElementById('logs').innerText = 'No logs available.';
+                return;
+            }
+
+            let html = '<table><thead><tr><th>ID</th><th>File Path</th><th>Result</th><th>Reason</th><th>Timestamp</th></tr></thead><tbody>';
+            logs.forEach(log => {
+                const resultClass = log.result.toLowerCase();
+                html += `<tr>
+                    <td>${log.id}</td>
+                    <td>${log.file_path}</td>
+                    <td class="${resultClass}">${log.result}</td>
+                    <td>${log.reason}</td>
+                    <td>${log.timestamp}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('logs').innerHTML = html;
+        }
+
+        // Fetch logs on load and every 5 seconds
+        fetchLogs();
+        setInterval(fetchLogs, 5000);
+    </script>
+</body>
+</html>

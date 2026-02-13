@@ -1,0 +1,7 @@
+{
+    "watch_path": "./watch_folder_example",
+    "ai_api_url": "http://localhost:11434/api/generate",
+    "ai_model": "gemma:2b",
+    "poll_interval": 5,
+    "port": 8080
+}
