@@ -26,9 +26,9 @@ class SafetyChecker:
                 "a screenshot of a video game world",      # 1: Safe
                 "a scenery or landscape photo",            # 2: Safe
                 "abstract shapes or solid colors",         # 3: Safe
+                "geometric crossing lines pattern",        # 4: Safe
+                "window frames or grid structure",         # 5: Safe
                 
-                "a nazi swastika symbol",                  # 4: Hate
-                "a swastika flag",                         # 5: Hate
                 "SS bolts symbol",                         # 6: Hate
                 "KKK symbol",                              # 7: Hate
                 
@@ -78,13 +78,14 @@ class SafetyChecker:
                 probs = text_probs.cpu().numpy()[0]
 
             # Parse results
-            # Indices: 0-3=Safe, 4-7=Hate, 8-11=Trademark
+            # Indices: 0-5=Safe, 6-7=Hate (SS, KKK), 8-11=Trademark
             
             # Safe score is max of safe categories
-            safe_score = max(probs[0:4])
+            safe_score = max(probs[0:6])
             
             # Hate / Trademark scores
-            hate_max = max(probs[4:8])
+            # Removed Swastika (indices 4,5 in previous list) to reduce False Positives
+            hate_max = max(probs[6:8])
             trademark_score = max(probs[8:12])
 
             logging.info(f"Safety Check Scores - Safe: {safe_score:.2f}, Hate: {hate_max:.2f}, Trademark: {trademark_score:.2f}")

@@ -141,7 +141,9 @@ class Auditor:
         # Logic Rewrite: Fact-Based Audit (Objective Analysis)
         # Removed all "Strict", "Critical", and emotional directives to prevent hallucinations.
         prompt = f"""
-You are a VRChat Content Moderator.
+You are a VRChat Safety Auditor.
+Your task is to protect users from explicit violations while avoiding false positives.
+Be objective. Accidental resemblance to symbols in background patterns is NOT a violation.
 Your task is to objectively analyze the image and verify compliance with the rules.
 
 [Reference Rules]
