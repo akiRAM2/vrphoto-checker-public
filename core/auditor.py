@@ -4,7 +4,10 @@ import json
 import base64
 import logging
 import os
+import io
 import socket
+from PIL import Image
+from core.safety_checker import SafetyChecker
 
 class Auditor:
     def __init__(self, config):
@@ -13,6 +16,9 @@ class Auditor:
         self.model = config.get("ai_model", "gemma3:4b")
         self.timeout = config.get("ai_timeout", 60)  # Default 60 seconds for vision inference
         self.rules_path = "rules.md"
+        
+        # Initialize Local Safety Checker
+        self.safety_checker = SafetyChecker()
     
     def check_health(self):
         """Checks if Ollama is running and the model is available with detailed error reporting."""
@@ -90,19 +96,46 @@ class Auditor:
 
     def audit(self, file_path):
         # Read image and encode to base64
+        # (Preprocessing is handled in step 0 below)
+        # ---------------------------------------------------------
+        # 0. Preprocessing: Load & Resize (Compression)
+        # ---------------------------------------------------------
         try:
-            with open(file_path, "rb") as image_file:
-                encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-        except FileNotFoundError:
-            logging.error(f"File not found: {file_path}")
-            return "ERROR", "File not found during audit process."
-        except PermissionError:
-            logging.error(f"Permission denied: {file_path}")
-            return "ERROR", "Permission denied when reading file."
+            pil_image = Image.open(file_path).convert("RGB")
+            original_size = pil_image.size
+            if pil_image.width > 1920 or pil_image.height > 1080:
+                logging.info(f"Resizing large image ({original_size}) to max 1920x1080...")
+                pil_image.thumbnail((1920, 1080), Image.Resampling.LANCZOS)
+            
+            # Save to buffer for Base64 encoding
+            buffered = io.BytesIO()
+            pil_image.save(buffered, format="JPEG", quality=85)
+            encoded_string = base64.b64encode(buffered.getvalue()).decode('utf-8')
+            
         except Exception as e:
-            logging.error(f"Failed to read file {file_path}: {e}")
-            return "ERROR", f"File read exception: {type(e).__name__}"
+            logging.error(f"Failed to process image {file_path}: {e}")
+            return "ERROR", f"Image processing failed: {str(e)}"
+            
+        # ---------------------------------------------------------
+        # 1. Local Safety Check (Hate Symbols & Trademarks)
+        # ---------------------------------------------------------
+        # This runs on CPU/Local Python and avoids external API calls for these specific critical checks.
+        logging.info("Running Local Safety Checker...")
+        # Check against resized image for speed
+        local_result = self.safety_checker.check_image(pil_image)
         
+        if local_result.get("result") == "NG":
+            reason = local_result.get("reason", "Detected unsafe content via Local Check.")
+            # ... (Rest of existing logic)
+            logging.info(f"Local Check Failed: {reason}")
+            # Identify specific type of NG to match JSON format if needed, but Auditor returns (Result, Reason) tuple.
+            return "NG", f"[Local Safety] {reason}"
+            
+        logging.info("Local Safety Check PASS. Proceeding to LLM Audit...")
+        
+        # ---------------------------------------------------------
+        # 2. LLM Audit (Ollama / Gemma)
+        # ---------------------------------------------------------
         rules_text = self._read_rules()
         
         # Logic Rewrite: Fact-Based Audit (Objective Analysis)
