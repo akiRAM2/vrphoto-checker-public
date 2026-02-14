@@ -81,29 +81,83 @@
         /* Filters */
         .filters {
             display: flex;
-            gap: 10px;
+            gap: 12px;
+            align-items: center;
         }
 
         .filter-btn {
             background: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
+            border: 2px solid;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-btn:hover {
+            opacity: 0.8;
+        }
+
+        /* Individual filter styles - inactive state */
+        #btn-all {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        #btn-all.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: #ffffff;
+        }
+
+        #btn-fail {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        #btn-fail.active {
+            background: #ef4444;
+            border-color: #ef4444;
+            color: #ffffff;
+        }
+
+        #btn-pass {
+            border-color: #22c55e;
+            color: #22c55e;
+        }
+
+        #btn-pass.active {
+            background: #22c55e;
+            border-color: #22c55e;
+            color: #ffffff;
+        }
+
+        .filter-icon {
+            font-size: 18px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .clear-btn {
+            background: transparent;
+            border: 1px solid var(--color-fail);
+            color: var(--color-fail);
             padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
             transition: all 0.2s ease;
+            margin-left: 10px;
         }
 
-        .filter-btn:hover {
-            border-color: var(--text-secondary);
-            color: var(--text-primary);
-        }
-
-        .filter-btn.active {
-            background-color: var(--color-accent);
-            border-color: var(--color-accent);
+        .clear-btn:hover {
+            background-color: var(--color-fail);
             color: #ffffff;
         }
 
@@ -247,10 +301,19 @@
                 <div class="status-dot"></div> VRPhoto Checker
             </h1>
             <div class="filters">
-                <button id="btn-all" class="filter-btn active" onclick="setFilter('all')">All Logs</button>
-                <button id="btn-fail" class="filter-btn" onclick="setFilter('fail')"
-                    style="color: var(--color-fail); border-color: var(--color-fail-bg);">⚠️ Failures Only</button>
-                <button id="btn-pass" class="filter-btn" onclick="setFilter('pass')">Passed</button>
+                <button id="btn-all" class="filter-btn active" onclick="setFilter('all')">
+                    <span class="filter-icon">📋</span>
+                    <span>すべて表示</span>
+                </button>
+                <button id="btn-fail" class="filter-btn" onclick="setFilter('fail')">
+                    <span class="filter-icon">⚠️</span>
+                    <span>不合格のみ</span>
+                </button>
+                <button id="btn-pass" class="filter-btn" onclick="setFilter('pass')">
+                    <span class="filter-icon">✅</span>
+                    <span>合格のみ</span>
+                </button>
+                <button class="clear-btn" onclick="clearLogs()">🗑️ すべて削除</button>
             </div>
         </header>
 
@@ -295,9 +358,11 @@
             const sortedLogs = [...allLogs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
             const filteredLogs = sortedLogs.filter(log => {
+                // Exclude SKIPPED from all displays
+                if (log.result === 'SKIPPED') return false;
                 if (currentFilter === 'all') return true;
                 if (currentFilter === 'fail') return log.result === 'NG' || log.result === 'FAIL' || log.result === 'ERROR';
-                if (currentFilter === 'pass') return log.result === 'OK' || log.result === 'PASS' || log.result === 'SKIPPED';
+                if (currentFilter === 'pass') return log.result === 'OK' || log.result === 'PASS';
                 return true;
             });
 
@@ -373,9 +438,11 @@
             if (scrollPosition >= threshold) {
                 const sortedLogs = [...allLogs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
                 const filteredLogs = sortedLogs.filter(log => {
+                    // Exclude SKIPPED from all displays
+                    if (log.result === 'SKIPPED') return false;
                     if (currentFilter === 'all') return true;
                     if (currentFilter === 'fail') return log.result === 'NG' || log.result === 'FAIL' || log.result === 'ERROR';
-                    if (currentFilter === 'pass') return log.result === 'OK' || log.result === 'PASS' || log.result === 'SKIPPED';
+                    if (currentFilter === 'pass') return log.result === 'OK' || log.result === 'PASS';
                     return true;
                 });
 
@@ -388,6 +455,29 @@
                 }
             }
         });
+
+        async function clearLogs() {
+            if (!confirm('本当に全てのログを削除しますか？\nこの操作は取り消せません。')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/logs/clear', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`${result.deleted_count}件のログを削除しました`);
+                    await fetchLogs(); // Reload logs
+                } else {
+                    alert(`エラー: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Failed to clear logs:', error);
+                alert('ログのクリアに失敗しました');
+            }
+        }
 
         // Fetch logs initially and poll
         fetchLogs();

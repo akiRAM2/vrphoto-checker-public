@@ -50,3 +50,14 @@ class Database:
         rows = [dict(row) for row in cursor.fetchall()]
         conn.close()
         return rows
+    
+    def clear_logs(self):
+        """全ての監査ログを削除"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM audit_log')
+        conn.commit()
+        deleted_count = cursor.rowcount
+        conn.close()
+        logging.info(f"全{deleted_count}件のログを削除しました")
+        return deleted_count

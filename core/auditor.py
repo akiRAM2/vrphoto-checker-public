@@ -113,6 +113,30 @@ CONTEXT: VRChat is a 3D virtual reality game.
 - Avatars have diverse skin colors: human tones (light to dark) AND fantasy colors (blue, green, purple, pink, etc.)
 - This skin color diversity is NORMAL for this game - do not flag based on skin color alone
 
+🚨 CRITICAL CHECKS FIRST - Examine these BEFORE anything else:
+
+1. **CORPORATE LOGOS & BRAND NAMES** - Is there ANY visible logo or brand name?
+   - Tech: Apple (apple logo), Microsoft, Google, Facebook, Amazon, SEGA (セガ)
+   - Gaming: Nintendo (NINTENDO SWITCH text/logo), PlayStation, Xbox, Steam
+   - Sports: Nike (swoosh), Adidas (3 stripes), Supreme, Puma
+   - Luxury: Louis Vuitton, Gucci, Chanel
+   - ANY other recognizable company logo or brand text
+   → If YES to any: Mark as NG immediately
+
+2. **COPYRIGHTED CHARACTERS** - Is there ANY copyrighted character visible?
+   - Nintendo: Mario, Luigi, Link, Pikachu, Kirby, Splatoon characters
+   - SEGA: Sonic the Hedgehog, Tails, Knuckles
+   - Disney: Mickey Mouse, any Disney princess, Marvel characters
+   - Anime: Pokémon, Naruto, Dragon Ball, One Piece characters
+   - ANY character from commercial games, movies, or anime
+   → If YES to any: Mark as NG immediately
+
+3. **TEXT ON IMAGE** - Read ALL visible text carefully:
+   - Company names in any language (English, Japanese, etc.)
+   - Brand slogans or product names
+   - Copyright notices or trademark symbols (®, ™, ©)
+   → If any brand/company name appears: Mark as NG immediately
+
 PRINCIPLE: "When in doubt, mark as NG" - Be cautious and flag potentially problematic content.
 
 STEP 1 - Observe the image carefully:
@@ -143,6 +167,11 @@ STEP 3 - Examples for guidance:
 - Real personal information (names, addresses)
 - Graphic violence or gore
 - Drug-related imagery
+- **Intellectual Property violations [CRITICAL - ALWAYS NG]:**
+  * Copyrighted characters: Pokémon, Mario, Sonic, Disney characters, anime characters (Naruto, etc.)
+  * Corporate logos: Nike, Apple, Microsoft, Google, Facebook, Amazon, SEGA, etc.
+  * Brand names and trademarks: Supreme, Adidas, Louis Vuitton, etc.
+  * Any recognizable company mascots or branded imagery
 
 IMPORTANT: If you are uncertain whether something violates the rules, mark it as NG.
 
@@ -196,8 +225,10 @@ Output ONLY the JSON object. The "reason" must be in Japanese.
                     
                     # Check if JSON is empty
                     if not audit_data:
-                        logging.error(f"AI returned empty JSON object. Raw response was: {ai_response_text[:200]}")
-                        return "ERROR", "AI returned empty JSON object"
+                        logging.error(f"AI returned empty JSON object {{}}")
+                        logging.error(f"Full raw AI response: {ai_response_text}")
+                        logging.error(f"Response length: {len(ai_response_text)} chars")
+                        return "ERROR", f"AI returned empty JSON. This may indicate model confusion or timeout. Raw: {ai_response_text[:100]}"
                     
                     # Validate keys
                     if "result" not in audit_data or "reason" not in audit_data:
@@ -207,9 +238,10 @@ Output ONLY the JSON object. The "reason" must be in Japanese.
 
                     return audit_data.get("result", "UNKNOWN"), audit_data.get("reason", "No reason provided")
                     
-                except json.JSONDecodeError:
-                    logging.error(f"Failed to parse AI response JSON. Raw text: {ai_response_text[:100]}...")
-                    return "ERROR", f"Invalid JSON from AI. Raw: {ai_response_text[:20]}..."
+                except json.JSONDecodeError as e:
+                    logging.error(f"Failed to parse AI response JSON: {e}")
+                    logging.error(f"Raw text (full): {ai_response_text}")
+                    return "ERROR", f"Invalid JSON from AI. Error: {str(e)[:50]}"
                     
         except urllib.error.HTTPError as e:
             logging.error(f"HTTP Error from AI API: {e.code} - {e.reason}")

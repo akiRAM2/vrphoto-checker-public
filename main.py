@@ -3,6 +3,7 @@ import time
 import threading
 import json
 import logging
+import webbrowser
 from core.watcher import Watcher
 from core.database import Database
 from web.server import DashboardServer
@@ -85,6 +86,11 @@ def main():
     server_thread = threading.Thread(target=server.start, daemon=True)
     server_thread.start()
     logging.info(f"Dashboard running at http://localhost:{config['port']}")
+    
+    # Open browser automatically after a delay to ensure server is ready
+    time.sleep(5)
+    webbrowser.open(f"http://localhost:{config['port']}")
+    logging.info("Browser opened automatically.")
     
     # Start Directory Watcher
     watcher = Watcher(config, db)

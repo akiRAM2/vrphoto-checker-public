@@ -2,7 +2,7 @@
     "watch_path": "C:\\Users\\USER\\Pictures\\VRChat",
     "ai_api_url": "http://localhost:11434/api/generate",
     "ai_model": "gemma3:4b",
-    "ai_timeout": 60,
+    "ai_timeout": 90,
     "poll_interval": 5,
     "port": 8080
 }

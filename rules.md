@@ -1,86 +1,73 @@
 # Audit Rules
 
-Evaluate content based on the following criteria with STRICT enforcement.
+## VRChat Content Context
+- Photos are from **VRChat** (social VR platform)
+- Features: Anime avatars, 3D models, symbolic imagery, fantasy characters, virtual environments
+- Rarely features: Real people or realistic photography
+- Fantasy skin colors are normal (virtual avatars)
 
-## [OK / PASS] Allowed Content
-
-Only the following are clearly acceptable:
-
-### Clearly Safe Content
-- **Fully clothed avatars**: Standard clothing with no questionable exposure
-- **Landscape/architecture**: World scenery without people
-- **Casual group photos**: People in normal attire at public events
-
-### Judgment Principle
+## Judgment Principle
 **"When in doubt, mark as NG."**
-If the content is questionable or unclear, it should be flagged for review.
 
 ---
 
-## [NG] Prohibited Content - Flag Immediately
+## [NG] Prohibited Content
 
-### 1. Sexually Explicit Content [Judgment: NG]
-**Exposure (Critical)**: 
-  - [NG] Any visible genitals
-  - [NG] Any visible nipples (female avatars)
-  - [NG] Exposed buttocks
-  - [NG] Revealing clothing where coverage is unclear or minimal
+### 1. Sexual Content
+- [NG] Visible genitals, nipples (female), buttocks
+- [NG] Sexually provocative clothing or poses
+- [NG] Sexual acts or suggestive animations
+- [NG] Lingerie-style clothing in sexual contexts
 
-**Provocative/Suggestive Clothing**:
-  - [NG] Sexually provocative outfits, even if body parts are covered
-  - [NG] Extremely tight clothing that emphasizes body shape in a sexual manner
-  - [NG] Lingerie-style clothing worn in explicitly sexual contexts
-  - [NG] Outfits designed primarily for sexual appeal or provocation
+### 2. Hate Speech & Discrimination [CRITICAL - ALWAYS NG]
+**Symbols** (MUST flag immediately):
+- [NG] Swastika/Nazi symbols (卍 is OK if clearly Buddhist context)
+- [NG] Nazi uniforms, SS symbols, Hitler imagery
+- [NG] KKK hoods, crosses, or symbols
+- [NG] Confederate flags in hate context
+- [NG] ISIS flags or terrorist symbols
+- [NG] Any hate group logos or insignia
 
-**Sexual Acts**: 
-  - [NG] Sexual acts or poses/animations suggesting them
-  - [NG] Suggestive or provocative positions
+**Text & Slurs**:
+- [NG] Racial, religious, or sexual orientation slurs
+- [NG] Violence incitement against groups
+- [NG] Religious symbols mocking or in hateful context
 
-**Excessive Suggestiveness**: 
-  - [NG] Clothing or poses designed for sexual gratification
+### 3. Violence & Gore
+- [NG] Graphic blood, gore, exposed organs, dismemberment
+- [NG] Self-harm promotion
+- [NG] Weapons threatening real people
 
-### 2. Hate Speech, Discrimination & Religious Symbols [Judgment: NG]
-**Discriminatory & Extremist Symbols**: 
-  - [NG] Swastikas and Nazi-related imagery
-  - [NG] KKK symbols and white supremacist logos
-  - [NG] ISIS, terrorist organization symbols
-  - [NG] Any symbols associated with hate groups
-  - [NG] Religious symbols used in mocking, hateful, or extremist context
+### 4. Privacy & Harassment
+- [NG] Personal information (doxing)
+- [NG] Targeted harassment
 
-**Textual Expressions**: 
-  - [NG] Discriminatory slurs targeting race, religion, sexual orientation, disability
-  - [NG] Statements inciting violence against specific groups
+### 5. Intellectual Property [STRICT NG]
 
-### 3. Violence & Gore [Judgment: NG]
-**Excessive Brutality**: 
-  - [NG] Excessive bleeding or graphic blood
-  - [NG] Exposed organs or realistic gore
-  - [NG] Dismemberment or realistic corpses
+**VRChat Note**: While fan avatars are common, the following are prohibited to avoid legal issues.
 
-**Self-Harm**: 
-  - [NG] Content promoting or glorifying self-harm
+**Copyrighted Characters & Brands** [NG]:
+- [NG] Pokémon, Nintendo (Mario, Zelda), Disney characters
+- [NG] Major anime/game characters (Naruto, Sonic, Final Fantasy, etc.)
+- [NG] Corporate mascots (Ronald McDonald, etc.)
 
-**Threatening Weapons**: 
-  - [NG] Weapons positioned to threaten real people
+**Brand Logos & Trademarks** [NG]:
+- [NG] Sports brands (Nike, Adidas, Supreme, etc.)
+- [NG] Tech companies (Apple, Microsoft, Google, Amazon, etc.)
+- [NG] Luxury brands (Louis Vuitton, Gucci, Chanel, etc.)
+- [NG] Any recognizable corporate logo or brand name
 
-### 4. Privacy & Harassment [Judgment: NG]
-**Personal Information (Doxing)**: 
-  - [NG] Real personal names, addresses, phone numbers
-  - [NG] Identifiable real-world locations with malicious intent
+**Commercial Use** [NG]:
+- [NG] Counterfeit goods or altered brand logos
 
-**Harassment**: 
-  - [NG] Content targeting specific users for harassment
+### 6. Illegal Items
+- [NG] Drug promotion
+- [NG] Terrorism or crime glorification
 
-### 5. Impersonation & IP Infringement [Judgment: FLAG]
-**Official Impersonation**: 
-  - [NG] False representation as VRChat staff or moderators
+---
 
-**Rights Violations**: 
-  - [FLAG] Obvious unauthorized use of copyrighted characters
-
-### 6. Illegal Items & Dangerous Acts [Judgment: NG]
-**Illegal Drugs**: 
-  - [NG] Visual promotion of illegal drug use
-
-**Terrorism & Crime**: 
-  - [NG] Symbols or content praising terrorism or criminal acts
+## [OK] Allowed Content
+- Fully clothed avatars with standard clothing
+- Landscapes and architecture
+- Casual group photos in normal attire
+- Fantasy/anime characters (non-sexual)

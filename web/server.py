@@ -45,6 +45,27 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
         else:
             super().do_GET()
+    
+    def do_POST(self):
+        parsed_url = urllib.parse.urlparse(self.path)
+        
+        if parsed_url.path == '/api/logs/clear':
+            try:
+                deleted_count = self.db.clear_logs()
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                response = {'success': True, 'deleted_count': deleted_count}
+                self.wfile.write(json.dumps(response).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                response = {'success': False, 'error': str(e)}
+                self.wfile.write(json.dumps(response).encode('utf-8'))
+        else:
+            self.send_response(404)
+            self.end_headers()
 
 class DashboardServer:
     def __init__(self, port, db):
