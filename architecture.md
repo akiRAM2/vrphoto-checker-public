@@ -15,9 +15,11 @@ Local Safety Engine (OpenCLIP + Torch):
 - **目的**: ヘイトシンボル（ナチス等）、商標（ブランドロゴ）のゼロショット検出。
 - **処理フロー**:
   1. 画像読み込み & リサイズ（1920x1080 -> モデル入力サイズへ圧縮）。
-  2. テキストエンコーディング（"Nazi symbol", "Trademark logo", "Safe content" 等）。
-  3. 画像とテキストの類似度を計算し、閾値を超えた場合に「NG」と判定。
-- **拡張性**: 精度不足の場合は、YOLO等の物体検出モデルを併用する「マルチモデル構成」に対応可能な設計とする。
+  2. テキストエンコーディング（複数の「安全」プロンプトと「禁止」プロンプトの比較）。
+     - Safe: "anime avatar", "video game world", "abstract shapes", etc.
+     - NG: "Nazi symbol", "copyrighted commercial logo", "iconic video game logo", etc.
+  3. 画像とテキストの類似度を計算し、閾値（Hate: 0.5, Trademark: 0.6）を超えた場合に「NG」と判定。
+- **工夫点**: 特定のブランド名を学習させず、概念（"iconic logo"等）で捉えることで未知のロゴにも対応。背景の幾何学模様を誤検知しないよう、安全カテゴリとの相対評価を行う。
 
 Database (標準 sqlite3 使用):
 判定結果（PASS/FAIL）、AIの根拠、タイムスタンプを永続化。
@@ -30,11 +32,11 @@ Plaintext
 vrphoto-checker/
 ├── main.py              # アプリ起動・監視スレッド管理
 ├── config.json          # 監視パス・モデル設定 (JSON)
-├── rules.md             # 監査ルール定義 (Markdown)
+├── rules.md             # 監査ルール定義 (Markdown) - 判断基準はここに集約
 ├── core/
 │   ├── watcher.py       # フォルダ監視エンジン
-│   ├── auditor.py       # 監査統括（Local Safety Engine 呼び出し）
-│   ├── safety_checker.py # OpenCLIP 実装 (New)
+│   ├── auditor.py       # 監査統括（Local Safety Engine 呼び出し -> LLM）
+│   ├── safety_checker.py # OpenCLIP 実装 (Local Check)
 │   └── database.py      # SQLite3 ログ管理
 ├── web/
 │   ├── server.py        # http.server による簡易API
@@ -56,8 +58,8 @@ vrphoto-checker/
 OpenCLIPにより「Hate」「Trademark」スコアを算出。
 
 判定解析:
-- Hate/Trademark スコアが規定値（例: 0.3）を超えた場合 -> **FAIL** (即NG)
-- それ以外 -> **PASS** (または必要に応じてLLMへ詳細監査を委譲)
+- Hateスコア > 0.5 または Trademarkスコア > 0.6 の場合 -> **FAIL** (即NG)
+- それ以外 -> **PASS** (Gemma 3 による詳細監査へ進む)
 
 4.2 監査ルールファイル (rules.md)
 ユーザーが「何を検閲すべきか」を記述するが、Local Engineは以下のカテゴリを重点的にチェックする。
