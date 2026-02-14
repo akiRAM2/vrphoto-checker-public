@@ -105,83 +105,35 @@ class Auditor:
         
         rules_text = self._read_rules()
         
-        # Strict moderation prompt with "when in doubt, mark as NG" policy
-        prompt = f"""You are a strict content moderation AI for VRChat screenshots.
+        # Hybrid logic: Strict for Safety, Relaxed for Copyright.
+        prompt = f"""
+You are a content moderation AI for VRChat.
 
-CONTEXT: VRChat is a 3D virtual reality game.
-- Images contain 3D game characters (avatars) and 3D virtual backgrounds
-- Avatars have diverse skin colors: human tones (light to dark) AND fantasy colors (blue, green, purple, pink, etc.)
-- This skin color diversity is NORMAL for this game - do not flag based on skin color alone
-
-🚨 CRITICAL CHECKS FIRST - Examine these BEFORE anything else:
-
-1. **CORPORATE LOGOS & BRAND NAMES** - Is there ANY visible logo or brand name?
-   - Tech: Apple (apple logo), Microsoft, Google, Facebook, Amazon, SEGA (セガ)
-   - Gaming: Nintendo (NINTENDO SWITCH text/logo), PlayStation, Xbox, Steam
-   - Sports: Nike (swoosh), Adidas (3 stripes), Supreme, Puma
-   - Luxury: Louis Vuitton, Gucci, Chanel
-   - ANY other recognizable company logo or brand text
-   → If YES to any: Mark as NG immediately
-
-2. **COPYRIGHTED CHARACTERS** - Is there ANY copyrighted character visible?
-   - Nintendo: Mario, Luigi, Link, Pikachu, Kirby, Splatoon characters
-   - SEGA: Sonic the Hedgehog, Tails, Knuckles
-   - Disney: Mickey Mouse, any Disney princess, Marvel characters
-   - Anime: Pokémon, Naruto, Dragon Ball, One Piece characters
-   - ANY character from commercial games, movies, or anime
-   → If YES to any: Mark as NG immediately
-
-3. **TEXT ON IMAGE** - Read ALL visible text carefully:
-   - Company names in any language (English, Japanese, etc.)
-   - Brand slogans or product names
-   - Copyright notices or trademark symbols (®, ™, ©)
-   → If any brand/company name appears: Mark as NG immediately
-
-PRINCIPLE: "When in doubt, mark as NG" - Be cautious and flag potentially problematic content.
-
-STEP 1 - Observe the image carefully:
-Examine: avatars, clothing coverage, visible body parts, text, symbols, background elements.
-Remember: This is a 3D game. Diverse skin colors (including fantasy colors) are normal.
-
-STEP 2 - Check against rules:
+MODERATION RULES (Read carefully):
 {rules_text}
 
-STEP 3 - Examples for guidance:
+JUDGMENT POLICY (Follow these priorities):
+1. **SAFETY (Sexual, Hate, Violence)**: [STRICT]
+   - Any sign of hate symbols (Swastika, etc.), sexual organs, or gore must be flagged as **NG** immediately.
+   - Do NOT overlook hate symbols.
 
-[OK examples] - Only these are clearly acceptable:
-- Fully clothed avatars (standard clothing visible) - any skin color
-- Casual photos in public VRChat worlds
-- Landscape/architecture screenshots without people
+2. **COPYRIGHT**: [RELAXED]
+   - Only flag as NG if it is an **EXACT COPY** of a copyrighted character/logo.
+   - Cosplay, inspired looks, or generic anime avatars are **OK**.
 
-[NG examples] - Flag any of these:
-- Exposed or partially visible genitals, nipples, buttocks
-- Revealing clothing where coverage is unclear
-- Provocative/sexually suggestive clothing (even if body parts are covered)
-  * Extremely tight clothing emphasizing body shape
-  * Lingerie-style outfits in sexual contexts
-  * Clothing designed to be sexually provocative
-- Sexual poses or suggestive animations
-- Hate symbols: Swastikas, Nazi imagery, KKK symbols, extremist logos
-- Religious symbols used in mocking or hateful context
-- Discriminatory text or slurs
-- Real personal information (names, addresses)
-- Graphic violence or gore
-- Drug-related imagery
-- **Intellectual Property violations [CRITICAL - ALWAYS NG]:**
-  * Copyrighted characters: Pokémon, Mario, Sonic, Disney characters, anime characters (Naruto, etc.)
-  * Corporate logos: Nike, Apple, Microsoft, Google, Facebook, Amazon, SEGA, etc.
-  * Brand names and trademarks: Supreme, Adidas, Louis Vuitton, etc.
-  * Any recognizable company mascots or branded imagery
+OUTPUT REQUIREMENT:
+- Output MUST be valid JSON.
+- **ALL TEXT FIELDS MUST BE IN JAPANESE.** (判定理由や説明は必ず日本語で書いてください)
 
-IMPORTANT: If you are uncertain whether something violates the rules, mark it as NG.
-
-OUTPUT (strict JSON format):
+JSON FORMAT EXAMPLE:
 {{
+    "observation": "画像には[説明]が写っています。",
     "result": "OK" or "NG",
-    "reason": "視覚的特徴: [具体的な観察内容]. 判定理由: [NGまたはOKの根拠]."
+    "reason": "[理由]のため、[OK/NG]と判定します。"
 }}
 
-Output ONLY the JSON object. The "reason" must be in Japanese.
+Your Task:
+Analyze the image and output the result in the JSON format above.
 """
         
         payload = {
