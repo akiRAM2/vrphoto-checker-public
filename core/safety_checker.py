@@ -34,8 +34,8 @@ class SafetyChecker:
                 
                 "a corporate brand logo",                  # 8: Trademark
                 "a trademarked logo",                      # 9: Trademark
-                "Adidas logo",                             # 10: Trademark
-                "Nike logo",                               # 11: Trademark
+                "a copyrighted commercial logo",           # 10: Trademark (Generic)
+                "iconic video game logo",                  # 11: Trademark (Generic)
             ]
             
             self.text_features = self._precompute_text_features()

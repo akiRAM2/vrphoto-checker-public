@@ -8,6 +8,8 @@
 
 ## Judgment Principle
 **"When in doubt, mark as NG."**
+however,
+**"Do not hallucinate symbols in background patterns (e.g., posters, geometric designs). Only flag distinct, unambiguous hate symbols."**
 
 ---
 
