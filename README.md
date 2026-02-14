@@ -1,90 +1,78 @@
-# VRPhoto Checker (Standalone Edition)
+# VRPhoto Checker
 
-VRChatのスクリーンショットをローカルAI（Gemma 3）で自動的に監査し、「自作アバターの露出確認」や「UI映り込みチェック」を行うツールです。
-クラウドにアップロードせず、あなたのPC内だけですべて完結します。
+VRPhoto Checker is a standalone Python application that monitors your VRChat photo directory and uses a local AI (Ollama) to audit screenshots for NSFW content, copyright infringement, and hate symbols.
 
-## 🚀 特徴
-- **完全ローカル動作**: 画像がネットに流出するリスクはありません。
-- **Gemma 3 (via Ollama)**: 最新の軽量高性能モデルで画像を視覚的に理解します。
-- **超軽量**: 外部ライブラリほぼ不要。Python標準機能で動作します。
+Unlike cloud-based solutions, this tool runs entirely locally, ensuring your privacy.
 
-## 📦 導入方法 (Getting Started)
+## Features
 
-### 2. ローカルAI (Ollama) の準備
+- **Automated Monitoring**: Watches your VRChat photo folder for new screenshots.
+- **Local AI Analysis**: Uses Ollama with vision-capable models (e.g., Gemma 2, LLaVA, MiniCPM-V) to analyze images.
+- **Policy Enforcement**: Checks against defined rules for:
+  - **NSFW**: Nudity, sexual acts.
+  - **Copyright**: Unauthorized characters (e.g., Pokémon, Disney).
+  - **Hate Symbols**: Prohibited iconography.
+- **Web Dashboard**: View audit logs and images via a local web interface.
+- **Desktop Notifications**: Receive Windows alerts for policy violations.
+- **Privacy**: No images are uploaded to the cloud.
 
-このツールは画像認識に特化したAIモデル **Llava** を使用します。
+## Requirements
 
-1.  **Ollamaのインストール**: [ollama.com](https://ollama.com/) からインストーラーをダウンロードして実行してください。
-2.  **モデルのダウンロード**: コマンドプロンプト（またはPowerShell）を開き、以下のコマンドを実行します。
-    ```powershell
-    ollama pull llava
+- **OS**: Windows 10 or 11
+- **Python**: 3.10 or newer
+- **Ollama**: Must be installed and running. [Download Ollama](https://ollama.com/)
+
+## Installation
+
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/akiRAM2/vrphoto-checker.git
+    cd vrphoto-checker
     ```
-    *   ※ 初回は数GBのダウンロードが発生します。
-    *   ※ `gemma` などのテキスト専用モデルでは画像が見えないため、必ず `llava` (または `minicpm-v`) などのVisionモデルを使用してください。 (軽量) や `gemma3:12b` (高精度) も利用可能です。
 
-### 2. インストール
-このリポジトリを適当な場所に保存します。
+2.  **Install & Setup Ollama**:
+    -   Download and install Ollama from the official website.
+    -   Pull a vision-capable model. Recommended models:
+        ```bash
+        ollama pull gemma2:9b      # Good balance (requires ~6GB VRAM)
+        # OR
+        ollama pull llava:13b      # Standard vision model
+        # OR
+        ollama pull minicpm-v      # High performance small model
+        ```
+    -   Update `config.json` with your chosen model name (e.g., `"ai_model": "gemma2:9b"`).
 
-```powershell
-git clone <repository-url>
-cd vrphoto-checker
-```
+3.  **Run the Application**:
+    ```bash
+    python main.py
+    ```
+    -   The application will start monitoring your default VRChat photo directory (`Pictures/VRChat`).
+    -   A web dashboard will automatically open at `http://localhost:8080`.
 
-### 3. 設定 (config.json)
-初回起動時に `config.json` が自動生成されますが、必要に応じて編集してください。
-特に `watch_path` (監視するフォルダ) はあなたのVRChatスクショ保存先に合わせてください。
+## Configuration
+
+Edit `config.json` to customize behavior:
 
 ```json
 {
-    "watch_path": "C:\\Users\\User\\Pictures\\VRChat", 
+    "watch_path": "C:\\Users\\YourName\\Pictures\\VRChat",
     "ai_api_url": "http://localhost:11434/api/generate",
-    "ai_model": "gemma3:4b",
+    "ai_model": "gemma2:9b",
+    "ai_timeout": 60,
     "poll_interval": 5,
     "port": 8080
 }
 ```
-※ Windowsのパス区切り文字 `\` は `\\` と記述する必要があります。
 
-## 使い方
+## Third-Party Libraries
 
-### プログラムの実行
-フォルダ内の `main.py` を実行するだけです。
+This project uses the following open-source libraries via Python Standard Library or external tools:
 
-```powershell
-python main.py
-```
+-   **Ollama**: Local LLM runner.
+-   **Python Standard Library**: `urllib`, `json`, `sqlite3`, `http.server`, `threading`, `subprocess`.
 
-起動時、自動的に以下のチェックが行われます：
-- Ollamaが起動しているか？
-- 指定されたAIモデル（gemma2など）が使える状態か？
+No external PIP packages are required for the core functionality.
 
-問題があればエラーメッセージが表示されます。
+## Disclaimer
 
-### 監査の実行
-1. ツールが起動している状態で、指定したフォルダ（例: VRChatのスクショフォルダ）に新しい画像を保存します。
-2. ツールが自動的に画像を検知し、AIに判定させます。
-3. 通知はまだ実装されていませんが、ログに `PASS` または `FAIL` が表示されます。
-
-### 結果の確認
-ブラウザで以下のアドレスを開くと、履歴と判定理由を確認できます。
-[http://localhost:8080](http://localhost:8080)
-
-## 判定ルールの変更
-`rules.md` ファイルを編集することで、AIの判定基準を自由に変更できます。
-
-例:
-```markdown
-# 監査基準
-- [FAIL] ネームタグが映り込んでいる
-- [PASS] UIが消えている綺麗な写真
-```
-
-## トラブルシューティング
-**Q. "Ollama Connection Failed" と出る**
-A. Ollamaアプリが起動していない可能性があります。タスクトレイを確認するか、スタートメニューからOllamaを起動してください。
-
-**Q. "Model 'gemma3:4b' missing" と出る**
-A. `ollama pull gemma3:4b` コマンドを実行してモデルをダウンロードしてください。設定で使用するモデルを変更した場合は、そちらをpullしてください。
-
----
-Author: akiRAM
+This tool provides automated analysis based on AI models, which may produce errors or hallucinations. It should be used as an assistant, not a definitive legal judgment.
