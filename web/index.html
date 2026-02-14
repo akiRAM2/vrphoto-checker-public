@@ -17,6 +17,8 @@
             --color-fail-bg: rgba(218, 54, 51, 0.15);
             --color-pass: #238636;
             --color-pass-bg: rgba(35, 134, 54, 0.15);
+            --color-warn: #d29922;
+            --color-warn-bg: rgba(210, 153, 34, 0.15);
             --color-skip: #6e7681;
             --color-accent: #58a6ff;
         }
@@ -245,11 +247,16 @@
         }
 
         .badge.NG,
-        .badge.FAIL,
-        .badge.ERROR {
+        .badge.FAIL {
             background-color: var(--color-fail-bg);
             color: var(--color-fail);
             border: 1px solid var(--color-fail);
+        }
+
+        .badge.ERROR {
+            background-color: var(--color-warn-bg);
+            color: var(--color-warn);
+            border: 1px solid var(--color-warn);
         }
 
         .badge.SKIPPED {

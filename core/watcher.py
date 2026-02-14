@@ -3,6 +3,7 @@ import time
 import logging
 import hashlib
 from core.auditor import Auditor
+from core.notifier import show_notification
 
 class Watcher:
     def __init__(self, config, db):
@@ -78,10 +79,16 @@ class Watcher:
             # Save to DB
             self.db.add_record(file_path, result, reason)
             
-            # Notify (Placeholder for Windows Toast)
-            if result == "FAIL":
-                logging.warning(f"ALERT: {file_name} failed audit!")
-                # TODO: Implement Windows Toast notification using ctypes
+            # Notify (Windows Toast Notification)
+            if result in ["FAIL", "NG", "ERROR"]:
+                logging.warning(f"ALERT: {file_name} failed audit! Reason: {reason}")
+                
+                # Format a short notification text
+                short_reason = (reason[:50] + '..') if len(reason) > 50 else reason
+                show_notification(
+                    title=f"🛑 違反の可能性: {result}",
+                    message=f"{file_name}\n{short_reason}"
+                )
                 
         except Exception as e:
             logging.error(f"Failed to process {file_name}: {e}")

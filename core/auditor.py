@@ -105,35 +105,52 @@ class Auditor:
         
         rules_text = self._read_rules()
         
-        # Hybrid logic: Strict for Safety, Relaxed for Copyright.
+        # Logic Rewrite: Fact-Based Audit (Objective Analysis)
+        # Removed all "Strict", "Critical", and emotional directives to prevent hallucinations.
         prompt = f"""
-You are a content moderation AI for VRChat.
+You are a VRChat Content Moderator.
+Your task is to objectively analyze the image and verify compliance with the rules.
 
-MODERATION RULES (Read carefully):
+[Reference Rules]
 {rules_text}
 
-JUDGMENT POLICY (Follow these priorities):
-1. **SAFETY (Sexual, Hate, Violence)**: [STRICT]
-   - Any sign of hate symbols (Swastika, etc.), sexual organs, or gore must be flagged as **NG** immediately.
-   - Do NOT overlook hate symbols.
+[Analysis Instruction]
+1. First, objectively list what you see in the image (Symbols, Text, Characters, Clothes the chacactors wearing).
+2. Then, verify if ANY of the observed items match the [NG] categories in the rules.
+3. If no prohibited content is visible, the result is "OK".
+[Output Format]
+Provide the response in the following JSON format.
+**All text fields MUST be in Japanese.**
 
-2. **COPYRIGHT**: [RELAXED]
-   - Only flag as NG if it is an **EXACT COPY** of a copyrighted character/logo.
-   - Cosplay, inspired looks, or generic anime avatars are **OK**.
-
-OUTPUT REQUIREMENT:
-- Output MUST be valid JSON.
-- **ALL TEXT FIELDS MUST BE IN JAPANESE.** (判定理由や説明は必ず日本語で書いてください)
-
-JSON FORMAT EXAMPLE:
+Example Output (OK):
 {{
-    "observation": "画像には[説明]が写っています。",
-    "result": "OK" or "NG",
-    "reason": "[理由]のため、[OK/NG]と判定します。"
+  "observation": "青い空と海が見える背景。中央にアニメ調の少女のアバターがいる。白と青のワンピースを着ており、露出は少ない。",
+  "result": "OK",
+  "reason": "禁止されているコンテンツ（性描写、ヘイト、著作権侵害）は見当たらないため。"
 }}
 
-Your Task:
-Analyze the image and output the result in the JSON format above.
+Example Output (NG 1 - Hate Symbol):
+{{
+  "observation": "壁にハーケンクロイツ（ナチスのシンボル）が描かれたポスターがある。",
+  "result": "NG",
+  "reason": "ナチスのシンボルはヘイトスピーチ規定により禁止されているため。"
+}}
+
+Example Output (NG 2 - Sexual Content):
+{{
+  "observation": "女性アバターが下着姿で写っており、臀部や胸部が大きく露出している。",
+  "result": "NG",
+  "reason": "性的な表現は禁止されているため。"
+}}
+
+Example Output (NG 3 - Copyright):
+{{
+  "observation": "壁に『ポケットモンスター』のキャラクター『ピカチュウ』のイラストが描かれている。",
+  "result": "NG",
+  "reason": "著作権で保護されたキャラクターの無断使用は禁止されているため。"
+}}
+
+Your JSON Response:
 """
         
         payload = {
