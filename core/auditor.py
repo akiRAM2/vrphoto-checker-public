@@ -95,14 +95,16 @@ class Auditor:
         try:
             pil_image = Image.open(file_path).convert("RGB")
             original_size = pil_image.size
-            if pil_image.width > 1920 or pil_image.height > 1080:
-                logging.info(f"大きな画像 ({original_size}) を最大 1920x1080 にリサイズ中...")
-                pil_image.thumbnail((1920, 1080), Image.Resampling.LANCZOS)
+            # LM Studio は大きすぎるbase64画像を拒否するため、1024x1024以下に制限する
+            if pil_image.width > 1024 or pil_image.height > 1024:
+                logging.info(f"大きな画像 ({original_size}) を最大 1024x1024 にリサイズ中...")
+                pil_image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
             
-            # Base64 エンコード用にバッファへ保存
+            # Base64 エンコード用にバッファへ保存（品質75でさらにサイズを削減）
             buffered = io.BytesIO()
-            pil_image.save(buffered, format="JPEG", quality=85)
+            pil_image.save(buffered, format="JPEG", quality=75)
             encoded_string = base64.b64encode(buffered.getvalue()).decode('utf-8')
+            logging.info(f"画像をエンコード完了: サイズ={pil_image.size}, base64長={len(encoded_string):,} chars")
             
         except Exception as e:
             logging.error(f"画像処理失敗 {file_path}: {e}")
