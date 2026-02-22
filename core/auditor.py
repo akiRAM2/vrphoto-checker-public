@@ -88,27 +88,34 @@ class Auditor:
             logging.error(f"ルールファイルの読み込みに失敗: {e}")
             return "Error reading rules."
 
+    def _encode_image(self, pil_image, max_size, quality=75):
+        """画像を指定サイズ以下にリサイズしてBase64エンコードする。"""
+        img = pil_image.copy()
+        if img.width > max_size or img.height > max_size:
+            logging.info(f"大きな画像 ({img.size}) を最大 {max_size}x{max_size} にリサイズ中...")
+            img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+        buffered = io.BytesIO()
+        img.save(buffered, format="JPEG", quality=quality)
+        encoded = base64.b64encode(buffered.getvalue()).decode('utf-8')
+        logging.info(f"画像をエンコード完了: サイズ={img.size}, base64長={len(encoded):,} chars")
+        return encoded
+
     def audit(self, file_path):
         # ---------------------------------------------------------
-        # 0. 前処理: 画像の読み込みとリサイズ（圧縮）
+        # 0. 前処理: 画像の読み込み
         # ---------------------------------------------------------
         try:
             pil_image = Image.open(file_path).convert("RGB")
-            original_size = pil_image.size
-            # LM Studio は大きすぎるbase64画像を拒否するため、1024x1024以下に制限する
-            if pil_image.width > 1024 or pil_image.height > 1024:
-                logging.info(f"大きな画像 ({original_size}) を最大 1024x1024 にリサイズ中...")
-                pil_image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
-            
-            # Base64 エンコード用にバッファへ保存（品質75でさらにサイズを削減）
-            buffered = io.BytesIO()
-            pil_image.save(buffered, format="JPEG", quality=75)
-            encoded_string = base64.b64encode(buffered.getvalue()).decode('utf-8')
-            logging.info(f"画像をエンコード完了: サイズ={pil_image.size}, base64長={len(encoded_string):,} chars")
-            
         except Exception as e:
             logging.error(f"画像処理失敗 {file_path}: {e}")
             return "ERROR", f"画像処理に失敗しました: {str(e)}"
+
+        try:
+            # 通常は最大 1024x1024 でエンコード
+            encoded_string = self._encode_image(pil_image, max_size=1024, quality=75)
+        except Exception as e:
+            logging.error(f"画像エンコード失敗 {file_path}: {e}")
+            return "ERROR", f"画像エンコードに失敗しました: {str(e)}"
             
         # ---------------------------------------------------------
         # 1. シンボルチェック（ヘイトシンボル & 商標）
@@ -191,86 +198,114 @@ NG の例 (著作権):
             "stream": False,
         }
         
-        try:
-            data = json.dumps(payload).encode('utf-8')
-            req = urllib.request.Request(
-                self.api_url,
-                data=data,
-                headers={'Content-Type': 'application/json'}
-            )
-            
-            logging.info(f"[画像解析チェック] LM Studio に送信中 (timeout: {self.timeout}s)...")
-            logging.info(f"送信先: {self.api_url} | モデル: {self.model} | ペイロードサイズ: {len(data):,} bytes")
-            with urllib.request.urlopen(req, timeout=self.timeout) as response:
-                response_body = response.read().decode('utf-8')
-                result_json = json.loads(response_body)
-                
-                # OpenAI 互換レスポンスから content を取得
-                choices = result_json.get("choices", [])
-                if not choices:
-                    logging.error("AI レスポンスに choices が含まれていません")
-                    return "ERROR", "AI からの応答に choices が含まれていません"
-                
-                ai_response_text = choices[0].get("message", {}).get("content", "")
-                
-                # デバッグ: 生の AI 応答をログ出力
-                logging.info(f"AI 生レスポンス (先頭500文字): {ai_response_text[:500]}")
-                
-                # 空レスポンスのチェック
-                if not ai_response_text or ai_response_text.strip() == "":
-                    logging.error("AI が空のレスポンスを返しました")
-                    return "ERROR", "AI が空のレスポンスを返しました"
-                
+        # HTTP 400 "failed to process image" 発生時のリトライ用フラグ
+        retry_with_smaller = False
+
+        for attempt in range(2):  # 最大2回試行: 1024x1024 → 512x512
+            if attempt == 1:
+                # リトライ: 512x512 に縮小して再エンコード
+                logging.warning("[画像解析チェック] 画像処理失敗のため 512x512 に縮小してリトライ中...")
                 try:
-                    # AI がマークダウンのコードブロックを付加した場合の除去
-                    if "```json" in ai_response_text:
-                        ai_response_text = ai_response_text.split("```json")[1].split("```")[0].strip()
-                    elif "```" in ai_response_text:
-                        ai_response_text = ai_response_text.split("```")[1].split("```")[0].strip()
+                    encoded_string = self._encode_image(pil_image, max_size=512, quality=70)
+                    # ペイロードの画像URLを更新
+                    payload["messages"][1]["content"][0]["image_url"]["url"] = (
+                        f"data:image/jpeg;base64,{encoded_string}"
+                    )
+                except Exception as e:
+                    logging.error(f"リトライ用画像エンコード失敗: {e}")
+                    return "ERROR", f"リトライ用画像エンコードに失敗しました: {str(e)}"
 
-                    audit_data = json.loads(ai_response_text)
-                    
-                    # デバッグ: パースされた JSON をログ出力
-                    logging.info(f"パース済み JSON キー: {list(audit_data.keys())}")
-                    
-                    # 空の JSON オブジェクトのチェック
-                    if not audit_data:
-                        logging.error(f"AI が空の JSON オブジェクト {{}} を返しました")
-                        logging.error(f"AI 生レスポンス全文: {ai_response_text}")
-                        return "ERROR", f"AI が空の JSON を返しました。Raw: {ai_response_text[:100]}"
-                    
-                    # 必須キーの検証
-                    if "result" not in audit_data or "reason" not in audit_data:
-                        logging.warning(f"AI が不完全な JSON を返しました。検出されたキー: {list(audit_data.keys())}")
-                        logging.warning(f"JSON 全文: {audit_data}")
-                        return "ERROR", f"AI レスポンスに必須キーが不足しています。検出: {list(audit_data.keys())}"
-
-                    return audit_data.get("result", "UNKNOWN"), audit_data.get("reason", "理由が提供されていません")
-                    
-                except json.JSONDecodeError as e:
-                    logging.error(f"AI レスポンスの JSON パースに失敗: {e}")
-                    logging.error(f"生テキスト (全文): {ai_response_text}")
-                    return "ERROR", f"AI からの無効な JSON。エラー: {str(e)[:50]}"
-                    
-        except urllib.error.HTTPError as e:
-            logging.error(f"AI API からの HTTP エラー: {e.code} - {e.reason}")
-            # エラーボディを読み込んで詳細を確認
             try:
-                error_body = e.read().decode('utf-8')
-                logging.error(f"HTTP エラーボディ: {error_body}")
+                data = json.dumps(payload).encode('utf-8')
+                req = urllib.request.Request(
+                    self.api_url,
+                    data=data,
+                    headers={'Content-Type': 'application/json'}
+                )
+                
+                attempt_label = f"(試行 {attempt + 1}/2)" if attempt > 0 else ""
+                logging.info(f"[画像解析チェック] LM Studio に送信中 {attempt_label} (timeout: {self.timeout}s)...")
+                logging.info(f"送信先: {self.api_url} | モデル: {self.model} | ペイロードサイズ: {len(data):,} bytes")
+                with urllib.request.urlopen(req, timeout=self.timeout) as response:
+                    response_body = response.read().decode('utf-8')
+                    result_json = json.loads(response_body)
+                    
+                    # OpenAI 互換レスポンスから content を取得
+                    choices = result_json.get("choices", [])
+                    if not choices:
+                        logging.error("AI レスポンスに choices が含まれていません")
+                        return "ERROR", "AI からの応答に choices が含まれていません"
+                    
+                    ai_response_text = choices[0].get("message", {}).get("content", "")
+                    
+                    # デバッグ: 生の AI 応答をログ出力
+                    logging.info(f"AI 生レスポンス (先頭500文字): {ai_response_text[:500]}")
+                    
+                    # 空レスポンスのチェック
+                    if not ai_response_text or ai_response_text.strip() == "":
+                        logging.error("AI が空のレスポンスを返しました")
+                        return "ERROR", "AI が空のレスポンスを返しました"
+                    
+                    try:
+                        # AI がマークダウンのコードブロックを付加した場合の除去
+                        if "```json" in ai_response_text:
+                            ai_response_text = ai_response_text.split("```json")[1].split("```")[0].strip()
+                        elif "```" in ai_response_text:
+                            ai_response_text = ai_response_text.split("```")[1].split("```")[0].strip()
+
+                        audit_data = json.loads(ai_response_text)
+                        
+                        # デバッグ: パースされた JSON をログ出力
+                        logging.info(f"パース済み JSON キー: {list(audit_data.keys())}")
+                        
+                        # 空の JSON オブジェクトのチェック
+                        if not audit_data:
+                            logging.error(f"AI が空の JSON オブジェクト {{}} を返しました")
+                            logging.error(f"AI 生レスポンス全文: {ai_response_text}")
+                            return "ERROR", f"AI が空の JSON を返しました。Raw: {ai_response_text[:100]}"
+                        
+                        # 必須キーの検証
+                        if "result" not in audit_data or "reason" not in audit_data:
+                            logging.warning(f"AI が不完全な JSON を返しました。検出されたキー: {list(audit_data.keys())}")
+                            logging.warning(f"JSON 全文: {audit_data}")
+                            return "ERROR", f"AI レスポンスに必須キーが不足しています。検出: {list(audit_data.keys())}"
+
+                        return audit_data.get("result", "UNKNOWN"), audit_data.get("reason", "理由が提供されていません")
+                        
+                    except json.JSONDecodeError as e:
+                        logging.error(f"AI レスポンスの JSON パースに失敗: {e}")
+                        logging.error(f"生テキスト (全文): {ai_response_text}")
+                        return "ERROR", f"AI からの無効な JSON。エラー: {str(e)[:50]}"
+                        
+            except urllib.error.HTTPError as e:
+                logging.error(f"AI API からの HTTP エラー: {e.code} - {e.reason}")
+                # エラーボディを読み込んで詳細を確認
+                try:
+                    error_body = e.read().decode('utf-8')
+                    logging.error(f"HTTP エラーボディ: {error_body}")
+                except Exception as read_err:
+                    error_body = ""
+                    logging.error(f"エラーボディの読み込みに失敗: {read_err}")
+
+                # HTTP 400 かつ "failed to process image" ならリトライ
+                if e.code == 400 and "failed to process image" in error_body and attempt == 0:
+                    logging.warning("[画像解析チェック] LM Studio が画像処理に失敗 (コンテキスト不足の可能性)。縮小してリトライします。")
+                    continue  # 次のループで 512x512 にリトライ
+
                 print("\n" + "="*60)
                 print(f"❌  LM Studio HTTP {e.code} エラー詳細:")
                 print(error_body)
                 print("="*60 + "\n")
-            except Exception as read_err:
-                logging.error(f"エラーボディの読み込みに失敗: {read_err}")
-            return "ERROR", f"AI サーバー HTTP エラー: {e.code}"
-        except urllib.error.URLError as e:
-            logging.error(f"AI API への接続エラー: {e.reason}")
-            return "ERROR", "AI サーバーへの接続に失敗しました。"
-        except socket.timeout:
-            logging.error(f"AI 推論が {self.timeout} 秒でタイムアウトしました。")
-            return "ERROR", f"AI 推論タイムアウト (>{self.timeout}s)。config.json の 'ai_timeout' を増やしてみてください。"
-        except Exception as e:
-            logging.error(f"審査中に予期しないエラー: {e}")
-            return "ERROR", f"予期しないエラー: {str(e)}"
+                return "ERROR", f"AI サーバー HTTP エラー: {e.code}"
+            except urllib.error.URLError as e:
+                logging.error(f"AI API への接続エラー: {e.reason}")
+                return "ERROR", "AI サーバーへの接続に失敗しました。"
+            except socket.timeout:
+                logging.error(f"AI 推論が {self.timeout} 秒でタイムアウトしました。")
+                return "ERROR", f"AI 推論タイムアウト (>{self.timeout}s)。config.json の 'ai_timeout' を増やしてみてください。"
+            except Exception as e:
+                logging.error(f"審査中に予期しないエラー: {e}")
+                return "ERROR", f"予期しないエラー: {str(e)}"
+
+        # ループ終了（2回とも失敗した場合）
+        return "ERROR", "AI サーバー HTTP エラー: 400 (画像縮小リトライも失敗)"
