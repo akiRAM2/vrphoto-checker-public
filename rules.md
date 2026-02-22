@@ -27,9 +27,6 @@ however,
 - [NG] Nazi uniforms, SS symbols, Hitler imagery
 - [NG] KKK hoods, crosses, or symbols
 - [NG] Confederate flags in hate context
-**IMPORTANT EXCEPTION**:
-- **IGNORE Swastika / Hakenkreuz / Manji (卍) symbols completely.** 
-  (Reason: Excessive false positives with geometric patterns and Buddhist symbols. Only flag if present on a Nazi uniform or flag.)
 - [NG] ISIS flags or terrorist symbols
 - [NG] Any hate group logos or insignia
 

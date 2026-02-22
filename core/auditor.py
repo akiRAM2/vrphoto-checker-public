@@ -5,7 +5,9 @@ import base64
 import logging
 import os
 import io
+import time
 import socket
+import subprocess
 from PIL import Image
 from core.safety_checker import SafetyChecker
 
@@ -20,7 +22,53 @@ class Auditor:
         
         # Initialize Local Safety Checker
         self.safety_checker = SafetyChecker()
+        self.lms_exe = self._find_lms_exe()
     
+    def _find_lms_exe(self):
+        """lms.exe の場所を特定する。"""
+        # PATH から検索
+        try:
+            from shutil import which
+            path = which("lms")
+            if path:
+                return path
+        except:
+            pass
+        
+        # Windows 標準インストール場所（%USERPROFILE%\.lmstudio\bin\lms.exe）
+        default_path = os.path.join(os.path.expanduser("~"), ".lmstudio", "bin", "lms.exe")
+        if os.path.exists(default_path):
+            return default_path
+        
+        return None
+
+    def ensure_ai_server(self):
+        """LM Studio サーバーが起動し、モデルがロードされていることを確認する。"""
+        if not self.lms_exe:
+            logging.warning("lms CLI ツールが見つかりません。自動起動はスキップします。")
+            return False
+
+        try:
+            # 1. サーバー状態の確認
+            status_proc = subprocess.run([self.lms_exe, "server", "status"], capture_output=True, text=True)
+            if "Server: OFF" in status_proc.stdout or status_proc.returncode != 0:
+                logging.info("LM Studio サーバーが停止しています。起動中...")
+                subprocess.run([self.lms_exe, "server", "start"], check=True)
+                time.sleep(3) # 起動待ち
+
+            # 2. モデルのロード状況確認
+            status_proc = subprocess.run([self.lms_exe, "status"], capture_output=True, text=True)
+            if self.model.lower() not in status_proc.stdout.lower():
+                logging.info(f"モデル '{self.model}' をロード中...")
+                # コンテキスト長を 8192 に設定してロード（エラー回避のため）
+                subprocess.run([self.lms_exe, "load", self.model, "--context-length", "8192"], check=True)
+                logging.info("モデルのロードが完了しました。")
+            
+            return True
+        except Exception as e:
+            logging.error(f"LM Studio の自動制御中にエラーが発生しました: {e}")
+            return False
+
     def check_health(self):
         """LM Studioが起動しているか、モデルが利用可能かを確認する。"""
         print(f"[Auditor] LM Studio への接続を確認中: {self.base_url} ...")
