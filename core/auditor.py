@@ -111,20 +111,20 @@ class Auditor:
             return "ERROR", f"画像処理に失敗しました: {str(e)}"
             
         # ---------------------------------------------------------
-        # 1. ローカル安全チェック（ヘイトシンボル & 商標）
+        # 1. シンボルチェック（ヘイトシンボル & 商標）
         # ---------------------------------------------------------
-        logging.info("ローカル安全チェックを実行中...")
+        logging.info("[シンボルチェック] 実行中...")
         local_result = self.safety_checker.check_image(pil_image)
         
         if local_result.get("result") == "NG":
-            reason = local_result.get("reason", "ローカルチェックで危険なコンテンツが検出されました。")
-            logging.info(f"ローカルチェック失敗: {reason}")
-            return "NG", f"[ローカル安全チェック] {reason}"
+            reason = local_result.get("reason", "シンボルチェックで問題が検出されました。")
+            logging.info(f"[シンボルチェック] NG: {reason}")
+            return "NG", f"[シンボルチェック] {reason}"
             
-        logging.info("ローカル安全チェック PASS。LLM 審査に進みます...")
+        logging.info("[シンボルチェック] PASS → 画像解析チェックへ...")
         
         # ---------------------------------------------------------
-        # 2. LLM 審査（LM Studio / Qwen3 VL）
+        # 2. 画像解析チェック（LM Studio / Qwen3 VL）
         # OpenAI Chat Completions API 互換形式を使用
         # ---------------------------------------------------------
         rules_text = self._read_rules()
@@ -189,8 +189,6 @@ NG の例 (著作権):
             "temperature": 0.1,
             "max_tokens": 512,
             "stream": False,
-            # Qwen3 のthinkingモードを無効化（有効だとJSONが壊れる場合がある）
-            "enable_thinking": False
         }
         
         try:
@@ -201,7 +199,7 @@ NG の例 (著作権):
                 headers={'Content-Type': 'application/json'}
             )
             
-            logging.info(f"画像を LM Studio に送信中 (timeout: {self.timeout}s)...")
+            logging.info(f"[画像解析チェック] LM Studio に送信中 (timeout: {self.timeout}s)...")
             logging.info(f"送信先: {self.api_url} | モデル: {self.model} | ペイロードサイズ: {len(data):,} bytes")
             with urllib.request.urlopen(req, timeout=self.timeout) as response:
                 response_body = response.read().decode('utf-8')
