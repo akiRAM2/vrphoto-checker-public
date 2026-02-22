@@ -186,7 +186,9 @@ NG の例 (著作権):
             ],
             "temperature": 0.1,
             "max_tokens": 512,
-            "stream": False
+            "stream": False,
+            # Qwen3 のthinkingモードを無効化（有効だとJSONが壊れる場合がある）
+            "enable_thinking": False
         }
         
         try:
@@ -198,6 +200,7 @@ NG の例 (著作権):
             )
             
             logging.info(f"画像を LM Studio に送信中 (timeout: {self.timeout}s)...")
+            logging.info(f"送信先: {self.api_url} | モデル: {self.model} | ペイロードサイズ: {len(data):,} bytes")
             with urllib.request.urlopen(req, timeout=self.timeout) as response:
                 response_body = response.read().decode('utf-8')
                 result_json = json.loads(response_body)
@@ -255,8 +258,12 @@ NG の例 (著作権):
             try:
                 error_body = e.read().decode('utf-8')
                 logging.error(f"HTTP エラーボディ: {error_body}")
-            except Exception:
-                pass
+                print("\n" + "="*60)
+                print(f"❌  LM Studio HTTP {e.code} エラー詳細:")
+                print(error_body)
+                print("="*60 + "\n")
+            except Exception as read_err:
+                logging.error(f"エラーボディの読み込みに失敗: {read_err}")
             return "ERROR", f"AI サーバー HTTP エラー: {e.code}"
         except urllib.error.URLError as e:
             logging.error(f"AI API への接続エラー: {e.reason}")
