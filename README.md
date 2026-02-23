@@ -1,5 +1,7 @@
 # VRPhoto Checker
 
+![VRPhoto Checker](images/thumb.jpg)
+
 VRChat のスクリーンショットフォルダを監視し、ローカル AI（[LM Studio](https://lmstudio.ai/)）を使って画像を自動審査するツール。
 
 クラウドへの画像送信は一切なく、完全ローカルで動作するため、プライバシーを保ちながら利用できる。
