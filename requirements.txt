@@ -1,0 +1,18 @@
+# VRPhoto Checker - Python dependencies
+#
+# Install with:
+#   pip install -r requirements.txt
+#
+# PyTorch (CPU版) を使う場合は以下に置き換えてください:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements.txt
+
+# 画像処理
+Pillow>=10.0.0
+
+# CLIP モデル (シンボルチェック用)
+open_clip_torch>=2.24.0
+
+# PyTorch (CLIP の実行エンジン)
+# GPU (CUDA) 対応版は https://pytorch.org/get-started/locally/ を参照
+torch>=2.0.0

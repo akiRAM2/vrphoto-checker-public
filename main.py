@@ -68,10 +68,14 @@ def main():
     # Load configuration
     config = load_config()
     
-    # Check Environment (Ollama & Model)
-    # We create a temporary auditor instance just for the health check
+    # Check Environment (LM Studio & Model)
+    # サーバーの起動とモデルのロードを自動で試みる
     from core.auditor import Auditor
     temp_auditor = Auditor(config)
+    
+    print("[Main] AI サーバーの準備を確認中...")
+    temp_auditor.ensure_ai_server()
+    
     if not temp_auditor.check_health():
         logging.error("System health check failed. Please fix the issues above and restart.")
         input("Press Enter to exit...")

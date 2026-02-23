@@ -8,6 +8,9 @@
 
 ## Judgment Principle
 **"When in doubt, mark as NG."**
+however,
+**"Do not hallucinate symbols in background patterns (e.g., posters, geometric designs). Only flag distinct, unambiguous hate symbols."**
+**"Note: The Manji symbol (卍) and simple cross shapes are common in Buddhism and architecture. Do NOT flag them as Nazi symbols unless accompanied by other Nazi imagery (uniforms, flags)."**
 
 ---
 
@@ -21,7 +24,6 @@
 
 ### 2. Hate Speech & Discrimination [CRITICAL - ALWAYS NG]
 **Symbols** (MUST flag immediately):
-- [NG] Swastika/Nazi symbols (卍 is OK if clearly Buddhist context)
 - [NG] Nazi uniforms, SS symbols, Hitler imagery
 - [NG] KKK hoods, crosses, or symbols
 - [NG] Confederate flags in hate context
@@ -66,8 +68,8 @@
 
 ---
 
-## [OK] Allowed Content
-- Fully clothed avatars with standard clothing
-- Landscapes and architecture
-- Casual group photos in normal attire
-- Fantasy/anime characters (non-sexual)
+## [OK] Allowed Content (Do NOT Flag)
+- **Geometry**: Window frames, tiled floors, cross-shaped structures, geometric wallpapers (often mistaken for symbols).
+- **Religion**: Buddhist Manji (卍), Christian Crosses (unless used for hate), Shrine torii gates.
+- **Avatars**: Fully clothed avatars, Fantasy skin colors (blue, green, etc), Animal ears/tails.
+- **Environment**: Game world UI, Health bars, Player names (unless disclosing real-world PII).
