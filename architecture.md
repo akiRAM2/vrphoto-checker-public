@@ -44,7 +44,7 @@ Censorship Dashboard (標準 http.server 使用):
 3. ディレクトリ構造
 Plaintext
 vrphoto-checker/
-├── main.py              # アプリ起動・監視スレッド管理
+├── vrphoto-checker.py   # アプリ起動・監視スレッド管理
 ├── config.json          # 監視パス・モデル設定 (JSON)
 ├── rules.md             # 監査ルール定義 (Markdown) - 判断基準はここに集約
 ├── core/
