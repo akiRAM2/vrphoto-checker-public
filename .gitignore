@@ -4,3 +4,5 @@ logs/
 *.pyc
 .claude/
 .agent/
+
+work_report.md
