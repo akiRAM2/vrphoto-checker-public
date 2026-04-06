@@ -2,5 +2,7 @@ __pycache__/
 logs/
 .DS_Store
 *.pyc
+config.json
 .claude/
 .agent/
+work_reports/
