@@ -5,3 +5,4 @@ logs/
 config.json
 .claude/
 .agent/
+work_reports/
