@@ -9,19 +9,15 @@ import time
 import socket
 import subprocess
 from PIL import Image
-from core.safety_checker import SafetyChecker
 
 class Auditor:
     def __init__(self, config):
         self.api_url = config.get("ai_api_url", "http://localhost:1234/v1/chat/completions")
         # LM Studio: base URL is e.g. http://localhost:1234
         self.base_url = self.api_url.split("/v1/")[0] if "/v1/" in self.api_url else self.api_url
-        self.model = config.get("ai_model", "qwen2-vl-4b-instruct-q4_k_m")
+        self.model = config.get("ai_model", "google/gemma-4-26b-a4b")
         self.timeout = config.get("ai_timeout", 180)
         self.rules_path = "rules.md"
-        
-        # Initialize Local Safety Checker
-        self.safety_checker = SafetyChecker()
         self.lms_exe = self._find_lms_exe()
     
     def _find_lms_exe(self):
@@ -166,20 +162,7 @@ class Auditor:
             return "ERROR", f"画像エンコードに失敗しました: {str(e)}"
             
         # ---------------------------------------------------------
-        # 1. シンボルチェック（ヘイトシンボル & 商標）
-        # ---------------------------------------------------------
-        logging.info("[シンボルチェック] 実行中...")
-        local_result = self.safety_checker.check_image(pil_image)
-        
-        if local_result.get("result") == "NG":
-            reason = local_result.get("reason", "シンボルチェックで問題が検出されました。")
-            logging.info(f"[シンボルチェック] NG: {reason}")
-            return "NG", f"[シンボルチェック] {reason}"
-            
-        logging.info("[シンボルチェック] PASS → 画像解析チェックへ...")
-        
-        # ---------------------------------------------------------
-        # 2. 画像解析チェック（LM Studio / Gemma 4）
+        # 1. 画像解析チェック（LM Studio / Gemma 4）
         # OpenAI Chat Completions API 互換形式を使用
         # ---------------------------------------------------------
         rules_text = self._read_rules()
