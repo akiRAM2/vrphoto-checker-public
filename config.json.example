@@ -1,7 +1,7 @@
 {
     "watch_path": "C:\\Users\\YourName\\Pictures\\VRChat",
     "ai_api_url": "http://localhost:1234/v1/chat/completions",
-    "ai_model": "qwen/qwen3-vl-4b",
+    "ai_model": "google/gemma-4-26b-a4b",
     "ai_timeout": 180,
     "poll_interval": 5,
     "port": 8080

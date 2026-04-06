@@ -20,7 +20,7 @@ def load_config():
     default_config = {
         "watch_path": os.path.join(os.path.expanduser("~"), "Pictures", "VRChat"),
         "ai_api_url": "http://localhost:11434/api/generate",
-        "ai_model": "gemma3:4b",
+        "ai_model": "google/gemma-4-26b-a4b",
         "ai_timeout": 60,
         "poll_interval": 5,
         "port": 8080

@@ -24,7 +24,7 @@ Local Safety Engine (OpenCLIP + Torch):
 LM Studio VLM Engine (auditor.py):
 OpenCLIP の一次フィルタを通過した画像を、Vision Language Model（VLM）で詳細に審査するエンジン。
 - **使用ツール**: LM Studio（`lms` CLI 経由で自動起動）
-- **デフォルトモデル**: `qwen/qwen3-vl-4b`（config.json で変更可能）
+- **デフォルトモデル**: `google/gemma-4-26b-a4b`（config.json で変更可能）
 - **API**: LM Studio が公開する OpenAI 互換エンドポイント (`http://localhost:1234/v1/chat/completions`)
 - **処理フロー**:
   1. `auditor.py` 起動時に LM Studio サーバーの稼働を確認。未起動なら `lms server start` を自動実行。

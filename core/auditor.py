@@ -179,7 +179,7 @@ class Auditor:
         logging.info("[シンボルチェック] PASS → 画像解析チェックへ...")
         
         # ---------------------------------------------------------
-        # 2. 画像解析チェック（LM Studio / Qwen3 VL）
+        # 2. 画像解析チェック（LM Studio / Gemma 4）
         # OpenAI Chat Completions API 互換形式を使用
         # ---------------------------------------------------------
         rules_text = self._read_rules()
